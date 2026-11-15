@@ -2,7 +2,7 @@
   "id": "./",
   "name": "판타지 서재",
   "short_name": "판타지 서재",
-  "description": "매일 새로 올라온 판타지·무협 소설 낭독을 작품별로 모아 보는 서재입니다.",
+  "description": "매일 새로 올라온 AI 판타지·SF 영상을 작품별로 모아 보는 서재입니다.",
   "lang": "ko",
   "start_url": "./#home",
   "scope": "./",

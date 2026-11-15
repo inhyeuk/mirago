@@ -101,9 +101,14 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 @media (max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
 /* 카드 */
 .card{scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;position:relative}
-.thumb{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:var(--panel-2)}
-.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .25s}
-.card:hover .thumb img{transform:scale(1.05)}
+.thumb{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:var(--panel-2);transition:transform .25s ease,box-shadow .25s ease;transform-origin:50% 100%}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* 마우스를 올리면 섬네일 테두리째 20% 확대(아래 제목은 가리지 않도록 아래쪽 기준) */
+@media (hover:hover){
+  .card:hover{z-index:6}
+  .card:hover .thumb{transform:scale(1.2);box-shadow:0 12px 32px rgba(0,0,0,.65),0 0 0 2px rgba(255,255,255,.18)}
+  .rail-row{padding-top:32px;margin-top:-30px;padding-left:24px;padding-right:24px;margin-left:-24px;margin-right:-24px;scroll-padding-left:24px}
+}
 .ph{position:absolute;inset:0;display:flex;align-items:flex-end;padding:10px;background:hsl(var(--h),38%,22%);overflow:hidden}
 .ph::before{content:"";position:absolute;width:70%;aspect-ratio:1;right:-15%;top:-35%;border-radius:50%;background:hsl(var(--h),48%,33%)}
 .ph span{position:relative;font-weight:700;font-size:15px;line-height:1.3;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -447,7 +452,7 @@ function filterBar() {
   const narrs = [...new Set(W.map(w => w.narr))];
   return `<div class="row">
     <select id="g-sort" aria-label="정렬" class="btn sm"><option value="upd">최신 업데이트순</option><option value="eps">회차 많은순</option><option value="views">YouTube 조회수순</option><option value="name">가나다순</option></select>
-    <select id="g-narr" aria-label="낭독 형태" class="btn sm"><option value="">낭독 형태 전체</option>${narrs.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+    <select id="g-narr" aria-label="영상 형태" class="btn sm"><option value="">영상 형태 전체</option>${narrs.map(n => `<option>${esc(n)}</option>`).join('')}</select>
     <select id="g-len" aria-label="분량" class="btn sm"><option value="">분량 전체</option><option value="long">30화 이상</option><option value="mid">10~29화</option><option value="short">10화 미만</option></select>
   </div>`;
 }
