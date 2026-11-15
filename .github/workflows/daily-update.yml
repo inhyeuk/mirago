@@ -1,0 +1,76 @@
+# 공개 저장소(inhyeuk/fantasy-shelf)의 .github/workflows/daily-update.yml 원본.
+# 공개 저장소 Actions는 무료·무제한이라 수집을 여기서 돌린다.
+# 소스는 공개 저장소에 두지 않고, 실행할 때마다 비공개 저장소(vars.SRC_REPO)에서 배포 키로 받아 쓴다.
+# 수정은 이 파일에서 하고 공개 저장소에 그대로 복사한다.
+name: 판타지 서재 매일 자동 업데이트
+
+on:
+  schedule:
+    - cron: '17 20 * * *'   # 매일 한국 시간 새벽 5시 17분 (UTC 20:17)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    # 포크·다른 사람 저장소에서는 실행하지 않음
+    if: github.repository_owner == 'inhyeuk'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: 공개 사이트 저장소 받기
+        uses: actions/checkout@v4
+        with:
+          path: site
+
+      - name: 비공개 소스 받기
+        env:
+          SRC_KEY: ${{ secrets.SRC_DEPLOY_KEY }}
+          SRC_REPO: ${{ vars.SRC_REPO }}
+        run: |
+          mkdir -p ~/.ssh && printf '%s\n' "$SRC_KEY" > ~/.ssh/src_key && chmod 600 ~/.ssh/src_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          echo "GIT_SSH_COMMAND=ssh -i $HOME/.ssh/src_key -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+          GIT_SSH_COMMAND="ssh -i $HOME/.ssh/src_key -o IdentitiesOnly=yes" \
+            git clone --quiet --depth 1 "git@github.com:${SRC_REPO}.git" src
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 분류 규칙·수집기 테스트
+        working-directory: src
+        run: python -m unittest discover tests 2>&1 | tail -3
+
+      - name: 유튜브 검색·수집·AI 분류
+        working-directory: src
+        env:
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python collector/collect.py
+
+      - name: 수집 결과를 비공개 저장소에 저장
+        working-directory: src
+        run: |
+          python -c "import json,sys; sys.exit('demo catalog' if json.load(open('docs/catalog.json',encoding='utf-8')).get('demo') else 0)"
+          git config user.name "fantasy-shelf-bot"
+          git config user.email "fantasy-shelf-bot@users.noreply.github.com"
+          git add docs/catalog.json data/state.json
+          git diff --cached --quiet || git commit --quiet -m "자동 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
+          git push --quiet
+
+      - name: 공개 사이트 갱신 (화면 파일 2개만)
+        working-directory: site
+        run: |
+          cp ../src/docs/index.html ../src/docs/catalog.json .
+          touch .nojekyll
+          git config user.name "fantasy-shelf-bot"
+          git config user.email "fantasy-shelf-bot@users.noreply.github.com"
+          git add index.html catalog.json .nojekyll
+          git diff --cached --quiet || git commit --quiet -m "사이트 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
+          git push --quiet
