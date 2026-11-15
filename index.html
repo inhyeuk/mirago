@@ -81,6 +81,15 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .hero h1{font-size:36px;font-weight:900;letter-spacing:-.5px}
 @media (max-width:760px){.hero h1{font-size:27px}.hero-in{padding:24px 16px}.hero-dots{top:16px;bottom:auto;right:16px}}
 .hero .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:14px;color:#cfd5e4}
+/* 홈 빅배너: 위쪽도 다른 칸 사이 간격만큼 띄우고 모서리 둥글게, 좌우 화살표·스와이프로 넘김 */
+#hero{margin-top:30px;border-radius:14px;touch-action:pan-y}
+@media (max-width:760px){#hero{margin-top:20px;border-radius:12px;margin-left:0;margin-right:0}}
+.hero-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(10,14,24,.55);color:#fff;display:grid;place-items:center;padding:0;opacity:.75;transition:opacity .2s,background .2s;backdrop-filter:blur(4px)}
+.hero-nav svg{width:22px;height:22px}
+.hero-nav:hover{opacity:1;background:rgba(10,14,24,.8)}
+.hero-nav.prev{left:14px}.hero-nav.next{right:14px}
+#hero.has-nav .hero-in{padding-left:76px}
+@media (hover:none),(max-width:760px){.hero-nav{display:none}#hero.has-nav .hero-in{padding-left:16px}}
 .hero-dots{position:absolute;right:24px;bottom:30px;display:flex;gap:6px}
 .hero-dots button{width:8px;height:8px;border-radius:4px;border:0;background:rgba(255,255,255,.35);padding:0}
 .hero-dots button.on{width:22px;background:#fff}
@@ -395,7 +404,7 @@ function bindRails() {
 /* ================= 홈 ================= */
 let heroT = null;
 function heroHTML(list) {
-  return `<section class="hero" id="hero">${list.map((w, i) => {
+  return `<section class="hero${list.length > 1 ? ' has-nav' : ''}" id="hero">${list.map((w, i) => {
     const m = mine(w); const n = newEps(w).length; const tgt = resumeEp(w);
     return `<div class="hero-slide" data-i="${i}" style="${i ? 'display:none' : ''}">
       <div class="hero-bg">${thumbHTML(w, w.eps[w.eps.length - 1], true)}</div>
@@ -407,14 +416,26 @@ function heroHTML(list) {
         <button class="btn ghost" data-fav="${esc(w.key)}">${U.fav[w.key] ? ICON.check + '찜함' : ICON.plus + '찜하기'}</button>
         <a class="btn ghost" href="#work/${enc(w.key)}">상세 정보</a></div>
       </div></div>`;
-  }).join('')}${list.length > 1 ? `<div class="hero-dots">${list.map((_, i) => `<button data-hero="${i}" class="${i ? '' : 'on'}" aria-label="${i + 1}번째 추천"></button>`).join('')}</div>` : ''}</section>`;
+  }).join('')}${list.length > 1 ? `<button class="hero-nav prev" data-hnav="-1" aria-label="이전 추천">${ICON.left}</button><button class="hero-nav next" data-hnav="1" aria-label="다음 추천">${ICON.right}</button><div class="hero-dots">${list.map((_, i) => `<button data-hero="${i}" class="${i ? '' : 'on'}" aria-label="${i + 1}번째 추천"></button>`).join('')}</div>` : ''}</section>`;
 }
 function bindHero(n) {
   clearInterval(heroT);
   if (n < 2) return;
   let cur = 0;
   const show = i => { cur = i; $$('.hero-slide').forEach(s => s.style.display = +s.dataset.i === i ? '' : 'none'); $$('[data-hero]').forEach(b => b.classList.toggle('on', +b.dataset.hero === i)); };
-  $$('[data-hero]').forEach(b => b.onclick = () => { show(+b.dataset.hero); clearInterval(heroT); });
+  const go = i => { show((i + n) % n); clearInterval(heroT); };
+  $$('[data-hero]').forEach(b => b.onclick = () => go(+b.dataset.hero));
+  $$('[data-hnav]').forEach(b => b.onclick = () => go(cur + +b.dataset.hnav));
+  const hs = $('#hero');
+  if (hs) {  // 손가락으로 좌우 밀기(세로 스크롤은 그대로)
+    let x0 = null, y0 = 0;
+    hs.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive:true });
+    hs.addEventListener('touchend', e => {
+      if (x0 == null) return;
+      const t = e.changedTouches[0]; const dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));
+    }, { passive:true });
+  }
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroT = setInterval(() => { if (!$('#hero')) return clearInterval(heroT); show((cur + 1) % n); }, 7000);
   const h = $('#hero'); if (h) { h.onmouseenter = () => clearInterval(heroT); }
 }
