@@ -54,7 +54,7 @@ nav.tabs{display:none}
   :root{--tab-h:60px}
   nav.main,.top .hide-m{display:none}
   .top-in{padding:10px 16px}
-  nav.tabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;height:calc(var(--tab-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:rgba(13,18,30,.97);border-top:1px solid var(--line)}
+  nav.tabs{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;height:calc(var(--tab-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:rgba(13,18,30,.97);border-top:1px solid var(--line)}
   nav.tabs a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--muted)}
   nav.tabs a svg{width:22px;height:22px}
   nav.tabs a.on{color:var(--ink)}
@@ -209,6 +209,21 @@ body.listen .listen-note{display:block;text-align:center}
 .toast.on{opacity:1}
 .page-h{padding-top:22px;display:flex;flex-direction:column;gap:14px}
 .page-h h1{font-size:26px;font-weight:900}
+/* 채널 */
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+@media (max-width:760px){.ch-grid{grid-template-columns:1fr}}
+.ch-card{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);transition:border-color .2s,background .2s}
+.ch-card:hover{border-color:rgba(120,140,190,.5);background:var(--panel-2)}
+.ch-av{width:56px;height:56px;border-radius:50%;overflow:hidden;position:relative;display:grid;place-items:center;font-weight:900;font-size:20px;color:#fff;background:hsl(var(--h),40%,30%)}
+.ch-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ch-card .nm{font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.ch-card .st{font-size:12.5px;color:var(--muted)}
+.ch-card .ws{font-size:12.5px;color:#b9c1d6;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.ch-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.ch-head .ch-av{width:72px;height:72px;font-size:26px}
+.ch-head h1{font-size:26px;font-weight:900;line-height:1.25}
+a.ch-link{color:inherit;text-decoration:underline;text-decoration-color:rgba(255,255,255,.3);text-underline-offset:3px}
+a.ch-link:hover{text-decoration-color:currentColor}
 .hist{display:flex;flex-direction:column;gap:2px}
 .hist a{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;padding:8px;border-radius:8px}
 .hist a:hover{background:var(--panel)}
@@ -225,6 +240,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
     <nav class="main" aria-label="주 메뉴">
       <a href="#home" data-nav="home">홈</a>
       <a href="#genre" data-nav="genre">장르</a>
+      <a href="#channel" data-nav="channel">채널</a>
       <a href="#new" data-nav="new">오늘 업데이트</a>
       <a href="#library" data-nav="library">내 서재</a>
     </nav>
@@ -239,6 +255,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
 <nav class="tabs" aria-label="하단 메뉴">
   <a href="#home" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>홈</a>
   <a href="#genre" data-nav="genre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>장르</a>
+  <a href="#channel" data-nav="channel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="m8 2 4 4 4-4"/></svg>채널</a>
   <a href="#search" data-nav="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>검색</a>
   <a href="#library" data-nav="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 4h4v16H4zM10 4h4v16h-4zM16 5l4 1-3 14-4-1z"/></svg>내 서재</a>
 </nav>
@@ -412,7 +429,7 @@ function heroHTML(list) {
       <div class="hero-in">
         <div class="row">${n ? `<span class="b-new" style="position:static">오늘 ${n}화 업데이트</span>` : ''}${w.genres.map(g => `<span class="tag">${esc(g)}</span>`).join('')}</div>
         <h1>${esc(w.name)}</h1>
-        <div class="meta"><span>${w.eps.length}화</span><span>·</span><span>${esc(w.narr)}</span><span>·</span><span>${esc(w.chT)}</span><span>·</span><span>총 ${fmtTotal(w.total)}</span></div>
+        <div class="meta"><span>${w.eps.length}화</span><span>·</span><span>${esc(w.narr)}</span><span>·</span><a class="ch-link" href="#channel/${enc(w.ch)}">${esc(w.chT)}</a><span>·</span><span>총 ${fmtTotal(w.total)}</span></div>
         <div class="row"><a class="btn pri" href="#play/${enc(tgt.id)}">${ICON.play}${m.last ? `이어보기 ${esc(epLabel(tgt))}` : '1화 재생'}</a>
         <button class="btn ghost" data-fav="${esc(w.key)}">${U.fav[w.key] ? ICON.check + '찜함' : ICON.plus + '찜하기'}</button>
         <a class="btn ghost" href="#work/${enc(w.key)}">상세 정보</a></div>
@@ -517,6 +534,44 @@ function viewGenre(g) {
     ${list.length ? `<div class="grid">${list.map(w => card(w)).join('')}</div>` : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}`;
   bindG();
 }
+/* ================= 채널 ================= */
+function channelsOf(vis) {
+  const m = {};
+  for (const w of vis) {
+    const c = m[w.ch] || (m[w.ch] = { id:w.ch, t:w.chT || '이름 없는 채널', th:CAT.channels[w.ch]?.th || '', works:[], eps:0, upd:0, views:0 });
+    c.works.push(w); c.eps += w.eps.length; c.upd = Math.max(c.upd, w.upd);
+    for (const e of w.eps) c.views += e.vw || 0;  // 총 시청 건수 = 채널 회차들의 YouTube 조회수 합
+  }
+  return Object.values(m);
+}
+function chAvatar(c) {
+  return `<span class="ch-av" style="--h:${hash(c.id) % 360}">${esc((c.t || '?').trim().charAt(0))}${c.th && !CAT.demo ? `<img loading="lazy" src="${esc(c.th)}" alt="" onerror="this.remove()">` : ''}</span>`;
+}
+function viewChannel(cid) {
+  const vis = visible();
+  if (!cid) {
+    const sort = U.prefs.chSort2 || 'views';
+    const chs = channelsOf(vis).sort(sort === 'works' ? (a, b) => b.works.length - a.works.length || b.views - a.views
+      : sort === 'name' ? (a, b) => a.t.localeCompare(b.t, 'ko') : sort === 'upd' ? (a, b) => b.upd - a.upd : (a, b) => b.views - a.views);
+    $('#app').innerHTML = `<div class="page-h"><h1>채널<span class="muted" style="font-size:17px;font-weight:500;margin-left:8px">(${chs.length})</span></h1>
+      <div class="chips scroll"><button class="chip ${sort === 'views' ? 'on' : ''}" data-chsort="views">총 시청 많은 순</button><button class="chip ${sort === 'upd' ? 'on' : ''}" data-chsort="upd">최근 업데이트순</button><button class="chip ${sort === 'works' ? 'on' : ''}" data-chsort="works">작품 많은 순</button><button class="chip ${sort === 'name' ? 'on' : ''}" data-chsort="name">이름순</button></div></div>
+      ${chs.length ? `<div class="ch-grid">${chs.map(c => `<a class="ch-card" href="#channel/${enc(c.id)}">${chAvatar(c)}<span style="min-width:0;display:flex;flex-direction:column;gap:2px">
+        <span class="nm">${esc(c.t)}</span><span class="st">총 시청 ${fmtNum(c.views)} · 작품 ${c.works.length} · 회차 ${c.eps} · ${ago(c.upd)} 업데이트</span>
+        <span class="ws">${c.works.slice().sort((a, b) => b.upd - a.upd).slice(0, 3).map(w => esc(w.name)).join(' · ')}</span></span></a>`).join('')}</div>`
+        : '<div class="empty">아직 정리된 채널이 없습니다.</div>'}`;
+    $$('[data-chsort]').forEach(b => b.onclick = () => { U.prefs.chSort2 = b.dataset.chsort; saveU('prefs'); route(); });
+    return;
+  }
+  const c = channelsOf(vis.filter(w => w.ch === cid))[0];
+  if (!c) { $('#app').innerHTML = `<div class="empty" style="margin-top:30px">이 채널의 작품이 없습니다.<a class="btn acc" href="#channel">채널 목록</a></div>`; return; }
+  const list = applyG(c.works);
+  $('#app').innerHTML = `<div class="page-h"><div class="ch-head">${chAvatar(c)}<div style="display:flex;flex-direction:column;gap:6px">
+      <h1>${esc(c.t)}</h1><div class="muted small">총 시청 ${fmtNum(c.views)} · 작품 ${c.works.length} · 회차 ${c.eps} · ${ago(c.upd)} 업데이트</div>
+      <div class="row"><a class="btn sm" href="https://www.youtube.com/channel/${enc(cid)}" target="_blank" rel="noopener">YouTube 채널 열기</a><a class="btn sm ghost" href="#channel">채널 목록</a></div></div></div>
+    ${filterBar()}</div>
+    ${list.length ? `<div class="grid">${list.map(w => card(w)).join('')}</div>` : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}`;
+  bindG();
+}
 function viewNew() {
   const list = visible().filter(w => newEps(w).length).sort((a, b) => b.upd - a.upd);
   const week = visible().filter(w => Date.now() - w.upd < 7 * DAY && !newEps(w).length).sort((a, b) => b.upd - a.upd);
@@ -581,7 +636,7 @@ function viewWork(key) {
     <div class="detail-in">
       <div class="row">${n ? `<span class="b-new" style="position:static">오늘 ${n}화 업데이트</span>` : ''}${w.genres.map(g => `<a class="tag" href="#genre/${enc(g)}">${esc(g)}</a>`).join('')}</div>
       <h1>${esc(w.name)}</h1>
-      <div class="kv"><span>${w.eps.length}화</span><span>총 ${fmtTotal(w.total)}</span><span>${esc(w.narr)}</span><span>${esc(w.chT)}</span><span>${ago(w.upd)} 업데이트</span></div>
+      <div class="kv"><span>${w.eps.length}화</span><span>총 ${fmtTotal(w.total)}</span><span>${esc(w.narr)}</span><a class="ch-link" href="#channel/${enc(w.ch)}">${esc(w.chT)}</a><span>${ago(w.upd)} 업데이트</span></div>
       ${m.last ? `<div class="small muted">${m.watched}/${w.eps.length}화 시청 · 마지막 시청 ${ago(m.last.at)}</div>` : ''}
       <div class="row">
         <a class="btn pri" href="#play/${enc(tgt.id)}">${ICON.play}${m.last ? `이어보기 ${esc(epLabel(tgt))}` : '1화부터 재생'}</a>
@@ -853,6 +908,7 @@ function route() {
   if (view === 'work') viewWork(arg);
   else if (view === 'play') viewPlay(arg);
   else if (view === 'genre') viewGenre(arg);
+  else if (view === 'channel') viewChannel(arg);
   else if (view === 'new') viewNew();
   else if (view === 'search') viewSearch(arg);
   else if (view === 'library') viewLibrary(arg || 'watching');
