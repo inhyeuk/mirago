@@ -814,6 +814,29 @@ window.addEventListener('hashchange', () => {
   if (navStack.length > 1 && navStack[navStack.length - 2] === h) navStack.pop();   // 뒤로 간 경우
   else if (navStack[navStack.length - 1] !== h) navStack.push(h);
 });
+// 뒤로 가기 위치 기억: 화면마다(브라우저 기록 항목마다) 세로 스크롤과 가로 줄(레일) 스크롤을 저장해 두었다가
+// 뒤로·앞으로 돌아오면 그 자리로 복원. 새로 여는 화면은 맨 위에서 시작.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+let restoring = false;
+function saveScroll() {
+  if (restoring) return;
+  const rx = {};
+  $$('.rail-row').forEach(r => { if (r.id && r.scrollLeft) rx[r.id] = Math.round(r.scrollLeft); });
+  try { history.replaceState({ ...(history.state || {}), y:Math.round(window.scrollY), rx }, '', location.href); } catch (e) {}
+}
+let saveT = 0;
+document.addEventListener('scroll', () => { clearTimeout(saveT); saveT = setTimeout(saveScroll, 120); }, { capture:true, passive:true });
+document.addEventListener('click', e => { if (e.target.closest('a[href^="#"]')) { clearTimeout(saveT); saveScroll(); } }, true);
+function restoreScroll() {
+  const st = history.state;
+  if (!st || st.y == null) { window.scrollTo(0, 0); return; }
+  restoring = true;
+  const apply = () => {
+    for (const [id, x] of Object.entries(st.rx || {})) { const r = document.getElementById(id); if (r) r.scrollLeft = x; }
+    window.scrollTo(0, st.y);
+  };
+  apply(); setTimeout(apply, 30); setTimeout(() => { apply(); restoring = false; }, 180);  // 그림·글꼴이 늦게 그려져도 다시 맞춤
+}
 $('#back').addEventListener('click', () => {
   if (navStack.length > 1) history.back();
   else location.hash = '#home';   // 링크로 바로 들어온 화면이면 홈으로
@@ -834,8 +857,7 @@ function route() {
   else if (view === 'search') viewSearch(arg);
   else if (view === 'library') viewLibrary(arg || 'watching');
   else viewHome();
-  if (view !== 'play' && view !== 'work') window.scrollTo(0, 0);
-  if (view === 'work') window.scrollTo(0, 0);
+  if (view !== 'play') restoreScroll();  // 뒤로 온 화면은 보던 자리로, 새 화면은 맨 위로
   updateBell();
 }
 function skeleton() {
