@@ -2,11 +2,12 @@
 # 공개 저장소 Actions는 무료·무제한이라 수집을 여기서 돌린다.
 # 소스는 공개 저장소에 두지 않고, 실행할 때마다 비공개 저장소(vars.SRC_REPO)에서 배포 키로 받아 쓴다.
 # 수정은 이 파일에서 하고 공개 저장소에 그대로 복사한다.
-name: Mirago 매일 자동 업데이트
+name: Mirago 자동 업데이트
 
 on:
   schedule:
     - cron: '17 20 * * *'   # 매일 한국 시간 새벽 5시 17분 (UTC 20:17)
+    - cron: '47 */2 * * *'  # 2시간마다 수시 갱신: 검색 없이 등록 채널의 새 회차만 확인(새 영상 없으면 커밋 없음)
     - cron: '20 8 16 11 *'  # 1회용: 2026-11-16 17:20 KST, 검색 한도 초기화 직후 AI 영상 첫 넓은 조회(끝나면 지울 것)
   workflow_dispatch: {}
 
@@ -53,7 +54,7 @@ jobs:
         env:
           YT_API_KEY: ${{ secrets.YT_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python collector/collect.py
+        run: python collector/collect.py ${{ github.event.schedule == '47 */2 * * *' && '--light' || '' }}
 
       - name: 수집 결과를 비공개 저장소에 저장
         working-directory: src
