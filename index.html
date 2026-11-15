@@ -94,6 +94,10 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .rail-h .acts{display:flex;gap:6px;align-items:center}
 .rail-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,250px);gap:12px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 10px;scrollbar-width:none}
 .rail-row::-webkit-scrollbar{display:none}
+/* 이어보기: 다른 줄과 구분되는 바탕 + 약한 테두리, 홈 맨 위 */
+.rail.cont{margin-top:16px;margin-bottom:6px;background:linear-gradient(180deg,#141d31,#10172a);border:1px solid rgba(120,140,190,.22);border-radius:14px;padding:14px 16px 6px}
+@media (hover:hover){.rail.cont .rail-row{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px;scroll-padding-left:16px}}
+@media (max-width:760px){.rail.cont{padding:12px 12px 4px;margin:0 -4px}}
 @media (max-width:760px){.rail-row{grid-auto-columns:minmax(150px,44vw)}}
 .arrow{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;padding:0}
 @media (max-width:760px){.arrow{display:none}}
@@ -120,6 +124,10 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .pbar i{display:block;height:100%;background:var(--new)}
 .card .t{font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card .m{font-size:12.5px;color:var(--muted)}
+.b-next{position:absolute;right:6px;top:6px;display:inline-flex;align-items:center;gap:3px;background:var(--accent);color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.6px;border-radius:5px;padding:2px 5px 2px 7px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.b-next svg{width:12px;height:12px}
+.card.has-next{container-type:inline-size}
+.card.has-next .x{top:calc(56.25cqw - 34px);right:auto;left:6px}  /* NEXT 뱃지와 겹치지 않게 섬네일 왼쪽 아래로 */
 .card .x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.7);color:#fff;display:grid;place-items:center;opacity:0;padding:0}
 .card:hover .x,.card:focus-within .x{opacity:1}
 @media (hover:none){.card .x{opacity:1}}
@@ -254,6 +262,7 @@ const hash = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCo
 const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
 const cho = s => [...String(s)].map(ch => { const c = ch.charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 ? CHO[Math.floor(c / 588)] : ch; }).join('');
 const ICON = {
+  next:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5.5v13l9.5-6.5zM16 5.5h2.6v13H16z"/></svg>',
   play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>',
@@ -306,6 +315,11 @@ function resumeEp(w) {
   const e = m.last.e; const fin = m.last.d && m.last.t >= m.last.d - 20;
   return fin && w.eps[e.i + 1] ? w.eps[e.i + 1] : e;
 }
+// 이어보기 작품에서 지금 회차 뒤에 아직 안 본 회차가 있는가(마지막 편이면 없음)
+function hasNext(w) {
+  const m = mine(w); if (!m.last) return false;
+  return w.eps.slice(m.last.e.i + 1).some(e => { const p = U.prog[e.id]; return !(p && p.d && p.t >= p.d - 20); });
+}
 const epLabel = e => e.ep != null ? `${e.ep}화` : `#${e.i + 1}`;
 const thumbUrl = (id, big) => `https://i.ytimg.com/vi/${id}/${big ? 'hqdefault' : 'mqdefault'}.jpg`;
 function thumbHTML(w, e, big) {
@@ -357,8 +371,9 @@ function card(w, opt = {}) {
   const href = opt.resume ? `#play/${enc(target.id)}` : `#work/${enc(w.key)}`;
   const badge = (U.fav[w.key] || m.last) && m.fresh && !m.done ? `<span class="b-up">새 회차 ${m.fresh}</span>` : n ? '<span class="b-new">NEW</span>' : '';
   const ppct = opt.resume && m.last && m.last.d ? Math.round(m.last.t / m.last.d * 100) : pct;
-  return `<div class="card"><a href="${href}" aria-label="${esc(w.name)}">
-    <div class="thumb">${thumbHTML(w)}${badge}<span class="b-cnt">${opt.resume ? esc(epLabel(target)) : (w.eps.length > 1 ? w.eps.length + '화' : '단편')}</span>${(opt.resume || m.last) ? `<span class="pbar"><i style="width:${Math.max(ppct, 3)}%"></i></span>` : ''}</div></a>
+  const nx = opt.resume && hasNext(w);
+  return `<div class="card${nx ? ' has-next' : ''}"><a href="${href}" aria-label="${esc(w.name)}">
+    <div class="thumb">${thumbHTML(w)}${badge}${nx ? `<span class="b-next" title="다음 회차가 있습니다">NEXT${ICON.next}</span>` : ''}<span class="b-cnt">${opt.resume ? esc(epLabel(target)) : (w.eps.length > 1 ? w.eps.length + '화' : '단편')}</span>${(opt.resume || m.last) ? `<span class="pbar"><i style="width:${Math.max(ppct, 3)}%"></i></span>` : ''}</div></a>
     <a href="#work/${enc(w.key)}" class="t">${esc(w.name)}</a>
     <div class="m">${opt.sub ? esc(opt.sub) : `${esc(w.genres[0])} · ${esc(w.narr)} · ${ago(w.upd)}`}</div>
     ${opt.remove ? `<button class="x" data-dismiss="${esc(w.key)}" aria-label="이어보기에서 빼기">${ICON.x}</button>` : ''}
@@ -424,9 +439,9 @@ function viewHome() {
   const genreCount = {}; vis.forEach(w => w.genres.forEach(g => genreCount[g] = (genreCount[g] || 0) + 1));
   const aff = affinity();
   const genres = Object.keys(genreCount).sort((a, b) => (aff[b] || 0) - (aff[a] || 0) || genreCount[b] - genreCount[a]);
-  let h = banners() + (heroList.length ? heroHTML(heroList) : '');
+  let h = rail('이어보기', cont.slice(0, 20), { resume:true, remove:true, cls:'cont' });  // 항상 맨 위
+  h += banners() + (heroList.length ? heroHTML(heroList) : '');
   h += `<div class="fresh"><i></i>매일 AI가 자동으로 찾아 정리합니다 · ${ago(Date.parse(CAT.generatedAt))} 업데이트 · 작품 ${CAT.stats.works.toLocaleString()} · 회차 ${CAT.stats.episodes.toLocaleString()}</div>`;
-  h += rail('이어보기', cont.slice(0, 20), { resume:true, remove:true });
   h += rail('찜한 작품의 새 회차', news.slice(0, 20), { sub:'마지막으로 본 뒤 올라온 회차가 있습니다', more:'#library/news' });
   h += rail('오늘 업데이트', today.slice(0, 24), { sub:'최근 24시간 안에 새 회차가 올라온 작품', more:'#new' });
   if (lastWatched && lastWatched.sim.length) h += rail(`'${lastWatched.name}'을(를) 보셨으니`, lastWatched.sim.filter(w => !U.hidden.includes(w.key)));
