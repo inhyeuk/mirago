@@ -64,13 +64,14 @@ jobs:
           git diff --cached --quiet || git commit --quiet -m "자동 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
           git push --quiet
 
-      - name: 공개 사이트 갱신 (화면 파일 2개만)
+      - name: 공개 사이트 갱신 (화면 파일만 — 앱 화면·작품 목록·설치형 앱 파일)
         working-directory: site
         run: |
-          cp ../src/docs/index.html ../src/docs/catalog.json .
+          cp ../src/docs/index.html ../src/docs/catalog.json ../src/docs/manifest.webmanifest ../src/docs/sw.js .
+          mkdir -p icons && cp ../src/docs/icons/*.png icons/
           touch .nojekyll
           git config user.name "fantasy-shelf-bot"
           git config user.email "fantasy-shelf-bot@users.noreply.github.com"
-          git add index.html catalog.json .nojekyll
+          git add index.html catalog.json manifest.webmanifest sw.js icons .nojekyll
           git diff --cached --quiet || git commit --quiet -m "사이트 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
           git push --quiet
