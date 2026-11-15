@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#0a0e18">
-<title>판타지 서재</title>
+<title>Mirago</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="판타지 서재">
+<meta name="apple-mobile-web-app-title" content="Mirago">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,7 +203,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
 <header class="top">
   <div class="top-in">
     <button class="icon-btn back-btn" id="back" hidden aria-label="이전 화면으로" title="이전 화면으로 (Alt+←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <a class="logo" href="#home"><b>판</b><span id="site-name">판타지 서재</span></a>
+    <a class="logo" href="#home"><svg viewBox="0 0 100 100" width="30" height="30" aria-hidden="true" style="flex:none"><rect width="100" height="100" rx="22" fill="#185FA5"/><rect x="20" y="30" width="38" height="40" rx="5" fill="#E6F1FB"/><path d="M33 41 L46 50 L33 59 Z" fill="#185FA5"/><rect x="63" y="32" width="8" height="8" rx="1.5" fill="#E6F1FB" opacity=".8"/><rect x="63" y="46" width="8" height="8" rx="1.5" fill="#E6F1FB" opacity=".55"/><rect x="74" y="39" width="6" height="6" rx="1.5" fill="#E6F1FB" opacity=".4"/><rect x="63" y="60" width="6" height="6" rx="1.5" fill="#E6F1FB" opacity=".3"/></svg><span id="site-name">Mirago</span></a>
     <nav class="main" aria-label="주 메뉴">
       <a href="#home" data-nav="home">홈</a>
       <a href="#genre" data-nav="genre">장르</a>
@@ -289,8 +289,8 @@ function prepare(cat) {
   WK = {}; VID = {};
   for (const w of W) { WK[w.key] = w; for (const e of w.eps) VID[e.id] = { w, e }; }
   W.forEach(w => { w.sim = w.simIdx.map(i => W[i]).filter(Boolean); w.hiddenByUser = hid.has(w.key); });
-  $('#site-name').textContent = cat.site || '판타지 서재';
-  document.title = cat.site || '판타지 서재';
+  $('#site-name').textContent = cat.site || 'Mirago';
+  document.title = cat.site || 'Mirago';
 }
 const visible = () => W.filter(w => !U.hidden.includes(w.key));
 const newEps = w => w.eps.filter(e => e.p >= Date.now() - 24 * HOUR);
@@ -737,13 +737,13 @@ function viewLibrary(tab = 'watching') {
   const ch = $('#clear-hist'); if (ch) ch.onclick = () => { U.prog = {}; saveU('prog'); route(); };
   const ex = $('#exp'); if (ex) ex.onclick = () => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ app:'fantasy-shelf', v:2, prog:U.prog, fav:U.fav, hidden:U.hidden })], { type:'application/json' }));
-    a.download = `판타지서재-백업-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    a.download = `Mirago-백업-${new Date().toISOString().slice(0, 10)}.json`; a.click();
   };
   const im = $('#imp'); if (im) im.onchange = async ev => {
     try { const d = JSON.parse(await ev.target.files[0].text()); if (d.app !== 'fantasy-shelf') throw 0;
       Object.assign(U.prog, d.prog || {}); Object.assign(U.fav, d.fav || {}); U.hidden = [...new Set([...U.hidden, ...(d.hidden || [])])];
       saveU('prog'); saveU('fav'); saveU('hidden'); prepare(CAT); toast('백업을 가져왔습니다.'); route(); }
-    catch (e) { toast('판타지 서재 백업 파일이 아닙니다.'); }
+    catch (e) { toast('Mirago 백업 파일이 아닙니다.'); }
   };
   const uh = $('#unhide'); if (uh) uh.onclick = () => { U.hidden = []; saveU('hidden'); prepare(CAT); toast('숨김을 해제했습니다.'); route(); };
 }
@@ -764,7 +764,7 @@ function updateBell() {
   else if (d) d.remove();
 }
 function footer() {
-  $('#foot').innerHTML = `${esc(CAT.site || '판타지 서재')}는 YouTube에 공개된 영상을 YouTube 공식 플레이어로 보여 주는 정리 서비스입니다. 영상과 조회수의 권리는 각 채널과 YouTube에 있습니다.<br>
+  $('#foot').innerHTML = `${esc(CAT.site || 'Mirago')}는 YouTube에 공개된 영상을 YouTube 공식 플레이어로 보여 주는 정리 서비스입니다. 영상과 조회수의 권리는 각 채널과 YouTube에 있습니다.<br>
     권리 확인 문구가 있는 채널만 자동으로 모으며, 권리 침해가 의심되면 작품 화면의 '신고·숨기기'로 알려 주세요. · 마지막 업데이트 ${new Date(CAT.generatedAt).toLocaleString('ko-KR')}`;
 }
 

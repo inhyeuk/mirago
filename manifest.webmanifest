@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "판타지 서재",
-  "short_name": "판타지 서재",
-  "description": "매일 새로 올라온 AI 판타지·SF 영상을 작품별로 모아 보는 서재입니다.",
+  "name": "Mirago",
+  "short_name": "Mirago",
+  "description": "매일 새로 올라온 AI로 만든 영상(판타지·SF·공포·사극 등)을 작품별로 모아 보는 Mirago입니다.",
   "lang": "ko",
   "start_url": "./#home",
   "scope": "./",
