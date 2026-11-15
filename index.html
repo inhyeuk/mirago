@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#0a0e18">
+<title>판타지 서재</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e18;--panel:#131a29;--panel-2:#1b2337;--line:#273149;
+  --ink:#eef1f8;--muted:#9099b2;--accent:#3d7bff;--accent-soft:#16264a;--accent-ink:#fff;
+  --new:#ff4d5e;--ok:#5fd394;
+  --font:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --tab-h:0px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;word-break:keep-all;padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom))}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance}
+.muted{color:var(--muted)}.small{font-size:13px}
+/* 상단 바 */
+header.top{position:sticky;top:0;z-index:30;background:linear-gradient(var(--bg),rgba(10,14,24,.92));border-bottom:1px solid rgba(39,49,73,.6)}
+.top-in{max-width:1400px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:20px}
+.logo{font-weight:900;font-size:20px;letter-spacing:-.5px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.logo b{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;font-size:15px}
+nav.main{display:flex;gap:2px}
+nav.main a{padding:7px 12px;border-radius:8px;color:var(--muted);white-space:nowrap}
+nav.main a.on{color:var(--ink);font-weight:700}
+.spacer{flex:1}
+.icon-btn{position:relative;background:transparent;border:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
+.icon-btn:hover{background:var(--panel-2)}
+.icon-btn svg{width:22px;height:22px}
+.dot{position:absolute;top:4px;right:3px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--new);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+/* 하단 탭(모바일) */
+nav.tabs{display:none}
+@media (max-width:760px){
+  :root{--tab-h:60px}
+  nav.main,.top .hide-m{display:none}
+  .top-in{padding:10px 16px}
+  nav.tabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;height:calc(var(--tab-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:rgba(13,18,30,.97);border-top:1px solid var(--line)}
+  nav.tabs a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--muted)}
+  nav.tabs a svg{width:22px;height:22px}
+  nav.tabs a.on{color:var(--ink)}
+}
+main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direction:column;gap:30px}
+@media (max-width:760px){main{padding:0 16px 40px;gap:24px}}
+/* 버튼 */
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 16px;white-space:nowrap;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:#fff;color:#0a0e18;border-color:#fff}
+.btn.pri:hover{background:#dfe5f3}
+.btn.acc{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.ghost{background:rgba(255,255,255,.08);border-color:transparent}
+.btn.sm{padding:5px 11px;font-size:13px;border-radius:8px}
+.btn svg{width:18px;height:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* 히어로 */
+.hero{position:relative;margin:0 -24px;min-height:440px;display:flex;align-items:flex-end;overflow:hidden}
+@media (max-width:760px){.hero{margin:0 -16px;min-height:380px}}
+.hero-bg{position:absolute;inset:0}
+.hero-bg .ph,.hero-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,14,24,.95) 0%,rgba(10,14,24,.6) 45%,rgba(10,14,24,.1) 100%),linear-gradient(0deg,var(--bg) 0%,rgba(10,14,24,0) 45%)}
+.hero-in{position:relative;padding:40px 24px 34px;max-width:640px;display:flex;flex-direction:column;gap:12px}
+.hero h1{font-size:36px;font-weight:900;letter-spacing:-.5px}
+@media (max-width:760px){.hero h1{font-size:27px}.hero-in{padding:24px 16px}.hero-dots{top:16px;bottom:auto;right:16px}}
+.hero .meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:14px;color:#cfd5e4}
+.hero-dots{position:absolute;right:24px;bottom:30px;display:flex;gap:6px}
+.hero-dots button{width:8px;height:8px;border-radius:4px;border:0;background:rgba(255,255,255,.35);padding:0}
+.hero-dots button.on{width:22px;background:#fff}
+.fresh{font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.fresh i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+/* 레일 */
+.rail{display:flex;flex-direction:column;gap:10px}
+.rail-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.rail-h h2{font-size:19px;font-weight:700}
+.rail-h .sub{font-size:12.5px;color:var(--muted)}
+.rail-h .acts{display:flex;gap:6px;align-items:center}
+.rail-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,250px);gap:12px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 10px;scrollbar-width:none}
+.rail-row::-webkit-scrollbar{display:none}
+@media (max-width:760px){.rail-row{grid-auto-columns:minmax(150px,44vw)}}
+.arrow{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;padding:0}
+@media (max-width:760px){.arrow{display:none}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px 12px}
+@media (max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
+/* 카드 */
+.card{scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;position:relative}
+.thumb{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:var(--panel-2)}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .25s}
+.card:hover .thumb img{transform:scale(1.05)}
+.ph{position:absolute;inset:0;display:flex;align-items:flex-end;padding:10px;background:hsl(var(--h),38%,22%);overflow:hidden}
+.ph::before{content:"";position:absolute;width:70%;aspect-ratio:1;right:-15%;top:-35%;border-radius:50%;background:hsl(var(--h),48%,33%)}
+.ph span{position:relative;font-weight:700;font-size:15px;line-height:1.3;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.b-new{position:absolute;left:6px;top:6px;background:var(--new);color:#fff;font-size:11px;font-weight:900;border-radius:4px;padding:1px 6px;letter-spacing:.3px}
+.b-up{position:absolute;left:6px;top:6px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px}
+.b-cnt{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.78);border-radius:4px;padding:0 6px;font-size:12px;font-variant-numeric:tabular-nums}
+.pbar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.22)}
+.pbar i{display:block;height:100%;background:var(--new)}
+.card .t{font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .m{font-size:12.5px;color:var(--muted)}
+.card .x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.7);color:#fff;display:grid;place-items:center;opacity:0;padding:0}
+.card:hover .x,.card:focus-within .x{opacity:1}
+@media (hover:none){.card .x{opacity:1}}
+/* 탑10 */
+.top10 .rail-row{grid-auto-columns:minmax(250px,290px)}
+.rank{display:grid;grid-template-columns:auto 1fr;align-items:end}
+.rank .no{font-size:92px;font-weight:900;line-height:.8;color:var(--bg);-webkit-text-stroke:2px #5b6788;margin-right:-6px;font-variant-numeric:tabular-nums}
+.rank .card{min-width:0}
+/* 칩 */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 13px;font-size:13.5px;color:var(--muted);white-space:nowrap}
+.chip.on{background:#fff;border-color:#fff;color:#0a0e18;font-weight:500}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.tag{display:inline-block;font-size:12px;border-radius:5px;padding:1px 8px;background:rgba(255,255,255,.1);color:#d7dcea}
+/* 작품 상세 */
+.detail{position:relative;margin:0 -24px;overflow:hidden}
+@media (max-width:760px){.detail{margin:0 -16px}}
+.detail .hero-bg::after{background:linear-gradient(0deg,var(--bg) 0%,rgba(10,14,24,.75) 55%,rgba(10,14,24,.45) 100%)}
+.detail-in{position:relative;padding:60px 24px 20px;display:flex;flex-direction:column;gap:12px;max-width:820px}
+@media (max-width:760px){.detail-in{padding:40px 16px 16px}}
+.detail h1{font-size:34px;font-weight:900}
+@media (max-width:760px){.detail h1{font-size:26px}}
+.kv{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:14px;color:#cfd5e4}
+.tabbar{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabbar button,.tabbar a{background:transparent;border:0;border-bottom:3px solid transparent;padding:10px 14px;color:var(--muted);font-weight:500}
+.tabbar .on{color:var(--ink);border-bottom-color:var(--accent)}
+.eps{display:flex;flex-direction:column}
+.ep{display:grid;grid-template-columns:52px 168px 1fr auto;gap:14px;align-items:center;padding:12px 8px;border-bottom:1px solid var(--line);border-radius:6px}
+.ep:hover{background:var(--panel)}
+.ep.cur{background:var(--accent-soft)}
+.ep .no{font-size:20px;font-weight:700;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.ep .tt{font-weight:500}
+.ep .done{color:var(--ok);font-size:12px}
+@media (max-width:760px){.ep{grid-template-columns:40px 120px 1fr}.ep .tail{display:none}.ep .no{font-size:16px}}
+.ep-b{display:inline-block;background:var(--new);color:#fff;font-size:10.5px;font-weight:900;border-radius:3px;padding:0 5px;margin-right:6px;vertical-align:1px}
+/* 플레이어 */
+.play{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:22px;align-items:start;padding-top:18px}
+@media (max-width:1000px){.play{grid-template-columns:1fr}}
+.pbox{position:relative;aspect-ratio:16/9;min-height:200px;background:#000;border-radius:12px;overflow:hidden}
+.pbox iframe,.pbox #yt{position:absolute;inset:0;width:100%;height:100%;border:0}
+.pctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pctl select{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.sw{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--muted)}
+.next-up{display:none;border:1px solid var(--accent);background:var(--accent-soft);border-radius:12px;padding:14px 16px;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.next-up.on{display:flex}
+.next-up .ring{height:4px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden;margin-top:8px;width:220px;max-width:100%}
+.next-up .ring i{display:block;height:100%;background:#fff;width:0;transition:width 1s linear}
+.side{border:1px solid var(--line);border-radius:12px;overflow:hidden;max-height:76vh;display:flex;flex-direction:column}
+@media (max-width:1000px){.side{max-height:none}}
+.side-h{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.side .eps{overflow:auto}
+.side .ep{grid-template-columns:40px 1fr auto;border-radius:0;padding:10px 12px}
+.side .ep .thumb{display:none}
+body.listen header.top,body.listen nav.tabs,body.listen .nl{display:none!important}
+body.listen{background:#000;--tab-h:0px}
+body.listen .play{grid-template-columns:1fr;max-width:460px;margin:0 auto}
+.listen-note{display:none}
+body.listen .listen-note{display:block;text-align:center}
+/* 기타 */
+.empty{border:1px dashed var(--line);border-radius:12px;padding:30px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:12px;align-items:center}
+.banner{border:1px solid #24407a;background:var(--accent-soft);border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:14px}
+.banner.warn{border-color:#6b5320;background:#231c0d}
+.search-box{position:relative;margin-top:18px}
+.search-box input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px 14px 46px;font-size:17px}
+.search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted)}
+.sk{background:linear-gradient(90deg,var(--panel) 0%,var(--panel-2) 50%,var(--panel) 100%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:8px}
+@keyframes sk{to{background-position:-200% 0}}
+.toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + 22px);transform:translateX(-50%);background:#fff;color:#0a0e18;border-radius:10px;padding:10px 18px;z-index:60;max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s;font-weight:500}
+.toast.on{opacity:1}
+.page-h{padding-top:22px;display:flex;flex-direction:column;gap:14px}
+.page-h h1{font-size:26px;font-weight:900}
+.hist{display:flex;flex-direction:column;gap:2px}
+.hist a{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;padding:8px;border-radius:8px}
+.hist a:hover{background:var(--panel)}
+@media (max-width:760px){.hist a{grid-template-columns:110px 1fr}}
+footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);font-size:12.5px;line-height:1.7;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="logo" href="#home"><b>판</b><span id="site-name">판타지 서재</span></a>
+    <nav class="main" aria-label="주 메뉴">
+      <a href="#home" data-nav="home">홈</a>
+      <a href="#genre" data-nav="genre">장르</a>
+      <a href="#new" data-nav="new">오늘 업데이트</a>
+      <a href="#library" data-nav="library">내 서재</a>
+    </nav>
+    <div class="spacer"></div>
+    <a class="icon-btn" href="#search" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
+    <a class="icon-btn" href="#library/news" aria-label="새 회차 소식" id="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+  </div>
+</header>
+<main id="app"></main>
+<footer id="foot"></footer>
+<nav class="tabs" aria-label="하단 메뉴">
+  <a href="#home" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>홈</a>
+  <a href="#genre" data-nav="genre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>장르</a>
+  <a href="#search" data-nav="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>검색</a>
+  <a href="#library" data-nav="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 4h4v16H4zM10 4h4v16h-4zM16 5l4 1-3 14-4-1z"/></svg>내 서재</a>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ================= 공통 ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const enc = encodeURIComponent;
+const HOUR = 3600e3, DAY = 864e5;
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let toastT;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
+const fmtDur = s => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}` : `${m}:${String(x).padStart(2,'0')}`; };
+const fmtTotal = s => { const tm = Math.round(s / 60), h = Math.floor(tm / 60); return h ? `${h}시간 ${tm % 60}분` : `${tm}분`; };
+const fmtNum = n => new Intl.NumberFormat('ko-KR', { notation:'compact', maximumFractionDigits:1 }).format(n || 0);
+function ago(ms) {
+  const d = Date.now() - ms;
+  if (d < HOUR) return `${Math.max(1, Math.round(d / 60000))}분 전`;
+  if (d < DAY) return `${Math.round(d / HOUR)}시간 전`;
+  if (d < 30 * DAY) return `${Math.round(d / DAY)}일 전`;
+  const t = new Date(ms); return `${t.getFullYear()}.${t.getMonth() + 1}.${t.getDate()}`;
+}
+const hash = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const cho = s => [...String(s)].map(ch => { const c = ch.charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 ? CHO[Math.floor(c / 588)] : ch; }).join('');
+const ICON = {
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>',
+  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>',
+  left:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m15 6-6 6 6 6"/></svg>',
+  right:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>'
+};
+
+/* ================= 데이터 ================= */
+let CAT = null, W = [], WK = {}, VID = {};
+const U = {
+  prog: LS.get('fs2_prog', {}),          // 영상ID → {t, d, at}
+  fav: LS.get('fs2_fav', {}),            // 작품키 → 찜한 시각
+  dismiss: LS.get('fs2_dismiss', {}),    // 이어보기에서 뺀 작품
+  hidden: LS.get('fs2_hidden', []),      // 신고·숨긴 작품
+  recentQ: LS.get('fs2_recentq', []),
+  prefs: Object.assign({ speed:1, autonext:true }, LS.get('fs2_prefs', {})),
+  prevVisit: LS.get('fs2_visit', 0)
+};
+const saveU = k => LS.set({ prog:'fs2_prog', fav:'fs2_fav', dismiss:'fs2_dismiss', hidden:'fs2_hidden', recentQ:'fs2_recentq', prefs:'fs2_prefs' }[k], U[k]);
+let progT; const saveProg = () => { clearTimeout(progT); progT = setTimeout(() => saveU('prog'), 400); };
+
+function prepare(cat) {
+  CAT = cat;
+  const hid = new Set(U.hidden);
+  W = cat.works.map((w, idx) => {
+    const eps = w.e.map((e, i) => ({ id:e[0], ep:e[1], t:e[2], p:e[3] * 1000, du:e[4], vw:e[5], i }));
+    return { idx, key:w.k, name:w.n, ch:w.c, chT:cat.channels[w.c]?.t || '', genres:w.g, narr:w.nr, upd:w.u * 1000,
+      total:w.tot, eps, simIdx:w.sim || [], cho:cho(w.n).replace(/\s/g, '') };
+  });
+  WK = {}; VID = {};
+  for (const w of W) { WK[w.key] = w; for (const e of w.eps) VID[e.id] = { w, e }; }
+  W.forEach(w => { w.sim = w.simIdx.map(i => W[i]).filter(Boolean); w.hiddenByUser = hid.has(w.key); });
+  $('#site-name').textContent = cat.site || '판타지 서재';
+  document.title = cat.site || '판타지 서재';
+}
+const visible = () => W.filter(w => !U.hidden.includes(w.key));
+const newEps = w => w.eps.filter(e => e.p >= Date.now() - 24 * HOUR);
+function mine(w) {
+  let last = null, watched = 0;
+  for (const e of w.eps) { const p = U.prog[e.id]; if (!p) continue; if (!last || p.at > last.at) last = { ...p, e }; if (p.d && p.t >= p.d - 20) watched++; }
+  const since = last ? last.at : (U.fav[w.key] || 0);
+  const fresh = since ? w.eps.filter(e => e.p > since).length : 0;
+  return { last, watched, done: watched >= w.eps.length && w.eps.length > 0, fresh };
+}
+function resumeEp(w) {
+  const m = mine(w); if (!m.last) return w.eps[0];
+  const e = m.last.e; const fin = m.last.d && m.last.t >= m.last.d - 20;
+  return fin && w.eps[e.i + 1] ? w.eps[e.i + 1] : e;
+}
+const epLabel = e => e.ep != null ? `${e.ep}화` : `#${e.i + 1}`;
+const thumbUrl = (id, big) => `https://i.ytimg.com/vi/${id}/${big ? 'hqdefault' : 'mqdefault'}.jpg`;
+function thumbHTML(w, e, big) {
+  e = e || w.eps[w.eps.length - 1];
+  const ph = `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(w.name)}</span></span>`;
+  return CAT.demo ? ph : ph + `<img loading="lazy" src="${thumbUrl(e.id, big)}" alt="" onerror="this.remove()">`;
+}
+
+/* ================= 추천 ================= */
+function affinity() {
+  const g = {};
+  for (const [id, p] of Object.entries(U.prog)) {
+    const v = VID[id]; if (!v) continue;
+    const wgt = Math.min(3, (p.t || 0) / 600) + 0.5;
+    for (const x of v.w.genres) g[x] = (g[x] || 0) + wgt;
+  }
+  for (const k of Object.keys(U.fav)) { const w = WK[k]; if (w) for (const x of w.genres) g[x] = (g[x] || 0) + 2; }
+  const tot = Object.values(g).reduce((a, b) => a + b, 0) || 1;
+  for (const k in g) g[k] /= tot;
+  return g;
+}
+function recommend(limit = 20) {
+  const aff = affinity();
+  if (!Object.keys(aff).length) return [];
+  const started = new Set(W.filter(w => mine(w).last).map(w => w.key));
+  const simBoost = {};
+  for (const w of W) if (started.has(w.key)) w.sim.forEach((s, r) => simBoost[s.key] = (simBoost[s.key] || 0) + (1 - r / 15));
+  return visible().filter(w => !started.has(w.key)).map(w => {
+    let s = w.genres.reduce((a, g) => a + (aff[g] || 0), 0) * 3 + (simBoost[w.key] || 0) * 0.6;
+    if (Date.now() - w.upd < 7 * DAY) s += 0.3;
+    s += Math.log10(w.eps.length + 1) * 0.15;
+    return { w, s };
+  }).sort((a, b) => b.s - a.s).slice(0, limit).map(x => x.w);
+}
+function trending() {
+  return visible().filter(w => Date.now() - w.upd < 7 * DAY).map(w => ({ w, v:Math.max(...w.eps.filter(e => Date.now() - e.p < 7 * DAY).map(e => e.vw), 0) }))
+    .sort((a, b) => b.v - a.v).slice(0, 10).map(x => x.w);
+}
+function newsList() {
+  return visible().map(w => ({ w, m:mine(w) })).filter(x => (U.fav[x.w.key] || x.m.last) && !x.m.done && x.m.fresh > 0)
+    .sort((a, b) => b.w.upd - a.w.upd);
+}
+
+/* ================= 카드·레일 ================= */
+function card(w, opt = {}) {
+  const m = mine(w); const n = newEps(w).length;
+  const pct = m.last ? Math.round(m.watched / w.eps.length * 100) : 0;
+  const target = opt.resume ? resumeEp(w) : null;
+  const href = opt.resume ? `#play/${enc(target.id)}` : `#work/${enc(w.key)}`;
+  const badge = (U.fav[w.key] || m.last) && m.fresh && !m.done ? `<span class="b-up">새 회차 ${m.fresh}</span>` : n ? '<span class="b-new">NEW</span>' : '';
+  const ppct = opt.resume && m.last && m.last.d ? Math.round(m.last.t / m.last.d * 100) : pct;
+  return `<div class="card"><a href="${href}" aria-label="${esc(w.name)}">
+    <div class="thumb">${thumbHTML(w)}${badge}<span class="b-cnt">${opt.resume ? esc(epLabel(target)) : (w.eps.length > 1 ? w.eps.length + '화' : '단편')}</span>${(opt.resume || m.last) ? `<span class="pbar"><i style="width:${Math.max(ppct, 3)}%"></i></span>` : ''}</div></a>
+    <a href="#work/${enc(w.key)}" class="t">${esc(w.name)}</a>
+    <div class="m">${opt.sub ? esc(opt.sub) : `${esc(w.genres[0])} · ${esc(w.narr)} · ${ago(w.upd)}`}</div>
+    ${opt.remove ? `<button class="x" data-dismiss="${esc(w.key)}" aria-label="이어보기에서 빼기">${ICON.x}</button>` : ''}
+  </div>`;
+}
+let railN = 0;
+function rail(title, list, opt = {}) {
+  if (!list.length) return '';
+  const id = 'r' + (++railN);
+  return `<section class="rail ${opt.cls || ''}"><div class="rail-h"><div><h2>${esc(title)}</h2>${opt.sub ? `<div class="sub">${esc(opt.sub)}</div>` : ''}</div>
+    <div class="acts">${opt.more ? `<a class="small muted" href="${opt.more}">전체보기</a>` : ''}<button class="arrow" data-scroll="${id}" data-dir="-1" aria-label="왼쪽으로">${ICON.left}</button><button class="arrow" data-scroll="${id}" data-dir="1" aria-label="오른쪽으로">${ICON.right}</button></div></div>
+    <div class="rail-row" id="${id}">${list.map((w, i) => opt.rank ? `<div class="rank"><span class="no">${i + 1}</span>${card(w)}</div>` : card(w, opt)).join('')}</div></section>`;
+}
+function bindRails() {
+  $$('[data-scroll]').forEach(b => b.onclick = () => { const r = document.getElementById(b.dataset.scroll); r.scrollBy({ left:r.clientWidth * 0.85 * +b.dataset.dir, behavior:'smooth' }); });
+  $$('[data-dismiss]').forEach(b => b.onclick = ev => { ev.preventDefault(); U.dismiss[b.dataset.dismiss] = Date.now(); saveU('dismiss'); toast('이어보기에서 뺐습니다.'); route(); });
+}
+
+/* ================= 홈 ================= */
+let heroT = null;
+function heroHTML(list) {
+  return `<section class="hero" id="hero">${list.map((w, i) => {
+    const m = mine(w); const n = newEps(w).length; const tgt = resumeEp(w);
+    return `<div class="hero-slide" data-i="${i}" style="${i ? 'display:none' : ''}">
+      <div class="hero-bg">${thumbHTML(w, w.eps[w.eps.length - 1], true)}</div>
+      <div class="hero-in">
+        <div class="row">${n ? `<span class="b-new" style="position:static">오늘 ${n}화 업데이트</span>` : ''}${w.genres.map(g => `<span class="tag">${esc(g)}</span>`).join('')}</div>
+        <h1>${esc(w.name)}</h1>
+        <div class="meta"><span>${w.eps.length}화</span><span>·</span><span>${esc(w.narr)}</span><span>·</span><span>${esc(w.chT)}</span><span>·</span><span>총 ${fmtTotal(w.total)}</span></div>
+        <div class="row"><a class="btn pri" href="#play/${enc(tgt.id)}">${ICON.play}${m.last ? `이어보기 ${esc(epLabel(tgt))}` : '1화 재생'}</a>
+        <button class="btn ghost" data-fav="${esc(w.key)}">${U.fav[w.key] ? ICON.check + '찜함' : ICON.plus + '찜하기'}</button>
+        <a class="btn ghost" href="#work/${enc(w.key)}">상세 정보</a></div>
+      </div></div>`;
+  }).join('')}${list.length > 1 ? `<div class="hero-dots">${list.map((_, i) => `<button data-hero="${i}" class="${i ? '' : 'on'}" aria-label="${i + 1}번째 추천"></button>`).join('')}</div>` : ''}</section>`;
+}
+function bindHero(n) {
+  clearInterval(heroT);
+  if (n < 2) return;
+  let cur = 0;
+  const show = i => { cur = i; $$('.hero-slide').forEach(s => s.style.display = +s.dataset.i === i ? '' : 'none'); $$('[data-hero]').forEach(b => b.classList.toggle('on', +b.dataset.hero === i)); };
+  $$('[data-hero]').forEach(b => b.onclick = () => { show(+b.dataset.hero); clearInterval(heroT); });
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroT = setInterval(() => { if (!$('#hero')) return clearInterval(heroT); show((cur + 1) % n); }, 7000);
+  const h = $('#hero'); if (h) { h.onmouseenter = () => clearInterval(heroT); }
+}
+function bindFav() {
+  $$('[data-fav]').forEach(b => b.onclick = () => {
+    const k = b.dataset.fav;
+    if (U.fav[k]) { delete U.fav[k]; toast('찜을 해제했습니다.'); } else { U.fav[k] = Date.now(); toast('찜했습니다. 새 회차가 올라오면 알려 드립니다.'); }
+    saveU('fav'); b.innerHTML = U.fav[k] ? ICON.check + '찜함' : ICON.plus + '찜하기'; updateBell();
+  });
+}
+function viewHome() {
+  railN = 0;
+  const vis = visible();
+  const recs = recommend(24);
+  const today = vis.filter(w => newEps(w).length).sort((a, b) => newEps(b).length - newEps(a).length || b.upd - a.upd);
+  const heroList = [...new Set([...recs.slice(0, 2), ...today.slice(0, 3), ...[...vis].sort((a, b) => b.eps.length - a.eps.length).slice(0, 2)])].slice(0, 5);
+  const cont = vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last && !x.m.done && !(U.dismiss[x.w.key] > x.m.last.at)).sort((a, b) => b.m.last.at - a.m.last.at).map(x => x.w);
+  const news = newsList().map(x => x.w);
+  const lastWatched = cont[0] || vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last).sort((a, b) => b.m.last.at - a.m.last.at)[0]?.w;
+  const top = trending();
+  const binge = vis.filter(w => w.eps.length >= 30).sort((a, b) => b.eps.length - a.eps.length).slice(0, 20);
+  const genreCount = {}; vis.forEach(w => w.genres.forEach(g => genreCount[g] = (genreCount[g] || 0) + 1));
+  const aff = affinity();
+  const genres = Object.keys(genreCount).sort((a, b) => (aff[b] || 0) - (aff[a] || 0) || genreCount[b] - genreCount[a]);
+  let h = banners() + (heroList.length ? heroHTML(heroList) : '');
+  h += `<div class="fresh"><i></i>매일 AI가 자동으로 찾아 정리합니다 · ${ago(Date.parse(CAT.generatedAt))} 업데이트 · 작품 ${CAT.stats.works.toLocaleString()} · 회차 ${CAT.stats.episodes.toLocaleString()}</div>`;
+  h += rail('이어보기', cont.slice(0, 20), { resume:true, remove:true });
+  h += rail('찜한 작품의 새 회차', news.slice(0, 20), { sub:'마지막으로 본 뒤 올라온 회차가 있습니다', more:'#library/news' });
+  h += rail('오늘 업데이트', today.slice(0, 24), { sub:'최근 24시간 안에 새 회차가 올라온 작품', more:'#new' });
+  if (lastWatched && lastWatched.sim.length) h += rail(`'${lastWatched.name}'을(를) 보셨으니`, lastWatched.sim.filter(w => !U.hidden.includes(w.key)));
+  h += recs.length ? rail('취향 저격 추천', recs.slice(0, 20), { sub:'내가 본 장르와 비슷한 작품' }) : '';
+  h += rail('지금 많이 듣는 작품 TOP 10', top, { rank:true, cls:'top10', sub:'최근 7일 새 회차 · YouTube 조회수 기준' });
+  h += rail('정주행하기 좋은 긴 작품', binge, { sub:'30화 이상' });
+  for (const g of genres.slice(0, 8)) h += rail(g, vis.filter(w => w.genres.includes(g)).sort((a, b) => b.upd - a.upd).slice(0, 20), { more:`#genre/${enc(g)}` });
+  if (!vis.length) h += `<div class="empty">아직 정리된 작품이 없습니다. 첫 자동 업데이트가 끝나면 이곳이 채워집니다.</div>`;
+  $('#app').innerHTML = h;
+  bindRails(); bindFav(); bindHero(heroList.length); bindBanner();
+}
+
+/* ================= 장르 · 오늘 업데이트 ================= */
+const G = { sort:'upd', narr:'', len:'' };
+function sortList(list, s) {
+  const a = [...list];
+  if (s === 'eps') a.sort((x, y) => y.eps.length - x.eps.length);
+  else if (s === 'name') a.sort((x, y) => x.name.localeCompare(y.name, 'ko'));
+  else if (s === 'views') a.sort((x, y) => Math.max(...y.eps.map(e => e.vw)) - Math.max(...x.eps.map(e => e.vw)));
+  else a.sort((x, y) => y.upd - x.upd);
+  return a;
+}
+function filterBar() {
+  const narrs = [...new Set(W.map(w => w.narr))];
+  return `<div class="row">
+    <select id="g-sort" aria-label="정렬" class="btn sm"><option value="upd">최신 업데이트순</option><option value="eps">회차 많은순</option><option value="views">YouTube 조회수순</option><option value="name">가나다순</option></select>
+    <select id="g-narr" aria-label="낭독 형태" class="btn sm"><option value="">낭독 형태 전체</option>${narrs.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+    <select id="g-len" aria-label="분량" class="btn sm"><option value="">분량 전체</option><option value="long">30화 이상</option><option value="mid">10~29화</option><option value="short">10화 미만</option></select>
+  </div>`;
+}
+function applyG(list) {
+  let a = list;
+  if (G.narr) a = a.filter(w => w.narr === G.narr);
+  if (G.len === 'long') a = a.filter(w => w.eps.length >= 30);
+  if (G.len === 'mid') a = a.filter(w => w.eps.length >= 10 && w.eps.length < 30);
+  if (G.len === 'short') a = a.filter(w => w.eps.length < 10);
+  return sortList(a, G.sort);
+}
+function bindG() {
+  for (const [id, k] of [['#g-sort', 'sort'], ['#g-narr', 'narr'], ['#g-len', 'len']]) { const el = $(id); if (!el) continue; el.value = G[k]; el.onchange = () => { G[k] = el.value; route(); }; }
+}
+function viewGenre(g) {
+  const vis = visible();
+  const count = {}; vis.forEach(w => w.genres.forEach(x => count[x] = (count[x] || 0) + 1));
+  const all = Object.keys(count).sort((a, b) => count[b] - count[a]);
+  const list = applyG(g ? vis.filter(w => w.genres.includes(g)) : vis);
+  $('#app').innerHTML = `<div class="page-h"><h1>${g ? esc(g) : '장르'}</h1>
+    <div class="chips scroll"><a class="chip ${!g ? 'on' : ''}" href="#genre">전체</a>${all.map(x => `<a class="chip ${g === x ? 'on' : ''}" href="#genre/${enc(x)}">${esc(x)} <span class="muted">${count[x]}</span></a>`).join('')}</div>
+    ${filterBar()}</div>
+    ${list.length ? `<div class="grid">${list.map(w => card(w)).join('')}</div>` : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}`;
+  bindG();
+}
+function viewNew() {
+  const list = visible().filter(w => newEps(w).length).sort((a, b) => b.upd - a.upd);
+  const week = visible().filter(w => Date.now() - w.upd < 7 * DAY && !newEps(w).length).sort((a, b) => b.upd - a.upd);
+  railN = 0;
+  $('#app').innerHTML = `<div class="page-h"><h1>오늘 업데이트</h1><div class="muted small">최근 24시간 안에 새 회차가 올라온 작품 ${list.length}개 · ${ago(Date.parse(CAT.generatedAt))} 자동 업데이트</div></div>
+    ${list.length ? `<div class="grid">${list.map(w => card(w, { sub:`${newEps(w).map(epLabel).slice(-3).join(', ')} 업데이트 · ${ago(w.upd)}` })).join('')}</div>` : '<div class="empty">오늘 올라온 새 회차가 아직 없습니다.</div>'}
+    ${rail('이번 주에 업데이트된 작품', week.slice(0, 30))}`;
+  bindRails();
+}
+
+/* ================= 검색 ================= */
+function viewSearch(q0) {
+  $('#app').innerHTML = `<div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="sq" type="search" placeholder="작품명, 채널, 장르 · 초성 검색도 됩니다 (예: ㅎㄱ)" value="${esc(q0 || '')}" aria-label="검색어" autocomplete="off"></div><div id="sres"></div>`;
+  const inp = $('#sq'); let t;
+  const run = () => {
+    const q = inp.value.trim(); const box = $('#sres');
+    if (!q) {
+      const g = {}; visible().forEach(w => w.genres.forEach(x => g[x] = (g[x] || 0) + 1));
+      box.innerHTML = `<div class="page-h">${U.recentQ.length ? `<div class="rail-h"><h2>최근 검색어</h2><button class="btn sm ghost" id="clr-q">모두 지우기</button></div><div class="chips">${U.recentQ.map(x => `<button class="chip" data-q="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : ''}
+        <h2>장르로 찾기</h2><div class="chips">${Object.keys(g).sort((a, b) => g[b] - g[a]).map(x => `<a class="chip" href="#genre/${enc(x)}">${esc(x)}</a>`).join('')}</div></div>`;
+      $$('[data-q]').forEach(b => b.onclick = () => { inp.value = b.dataset.q; run(); });
+      const c = $('#clr-q'); if (c) c.onclick = () => { U.recentQ = []; saveU('recentQ'); run(); };
+      return;
+    }
+    const isCho = /^[ㄱ-ㅎ\s]+$/.test(q); const qq = q.toLowerCase(); const qc = q.replace(/\s/g, '');
+    const terms = qq.split(/\s+/).filter(Boolean);
+    const scored = visible().map(w => {
+      let s = 0;
+      if (isCho) { if (w.cho.includes(qc)) s = w.cho.startsWith(qc) ? 3 : 2; }
+      else {
+        const name = w.name.toLowerCase();
+        if (name.includes(qq)) s += name.startsWith(qq) ? 5 : 4;
+        const hay = `${name} ${w.chT} ${w.genres.join(' ')} ${w.narr}`.toLowerCase();
+        if (terms.every(x => hay.includes(x))) s += 2;
+        else if (terms.every(x => (hay + ' ' + w.eps.slice(0, 30).map(e => e.t).join(' ').toLowerCase()).includes(x))) s += 1;
+      }
+      return { w, s };
+    }).filter(x => x.s > 0).sort((a, b) => b.s - a.s || b.w.upd - a.w.upd).map(x => x.w);
+    box.innerHTML = `<div class="page-h"><div class="muted small">'${esc(q)}' 검색 결과 ${scored.length}개</div></div>${scored.length ? `<div class="grid">${scored.slice(0, 120).map(w => card(w)).join('')}</div>` : '<div class="empty">찾는 작품이 없습니다. 다른 단어나 초성으로 찾아보세요.</div>'}`;
+  };
+  inp.oninput = () => { clearTimeout(t); t = setTimeout(run, 180); };
+  inp.onkeydown = ev => { if (ev.key === 'Enter') { const q = inp.value.trim(); if (q) { U.recentQ = [q, ...U.recentQ.filter(x => x !== q)].slice(0, 10); saveU('recentQ'); } } };
+  inp.onblur = () => { const q = inp.value.trim(); if (q.length >= 2 && !U.recentQ.includes(q)) { U.recentQ = [q, ...U.recentQ].slice(0, 10); saveU('recentQ'); } };
+  run(); setTimeout(() => inp.focus(), 50);
+}
+
+/* ================= 작품 상세 ================= */
+const D = { order:'asc', range:0, tab:'eps' };
+let lastDetail = '';
+function viewWork(key) {
+  const w = WK[key];
+  if (!w) { $('#app').innerHTML = '<div class="empty">작품을 찾지 못했습니다. 삭제되었거나 이름이 바뀌었을 수 있습니다.<a class="btn" href="#home">홈으로</a></div>'; return; }
+  if (lastDetail !== key) { D.order = 'asc'; D.range = 0; D.tab = 'eps'; lastDetail = key; }
+  const m = mine(w); const tgt = resumeEp(w); const n = newEps(w).length;
+  const R = 50, ranges = Math.ceil(w.eps.length / R);
+  let eps = D.order === 'asc' ? w.eps : [...w.eps].reverse();
+  if (ranges > 1) eps = eps.slice(D.range * R, D.range * R + R);
+  railN = 0;
+  $('#app').innerHTML = `
+  <section class="detail"><div class="hero-bg">${thumbHTML(w, w.eps[w.eps.length - 1], true)}</div>
+    <div class="detail-in">
+      <div class="row">${n ? `<span class="b-new" style="position:static">오늘 ${n}화 업데이트</span>` : ''}${w.genres.map(g => `<a class="tag" href="#genre/${enc(g)}">${esc(g)}</a>`).join('')}</div>
+      <h1>${esc(w.name)}</h1>
+      <div class="kv"><span>${w.eps.length}화</span><span>총 ${fmtTotal(w.total)}</span><span>${esc(w.narr)}</span><span>${esc(w.chT)}</span><span>${ago(w.upd)} 업데이트</span></div>
+      ${m.last ? `<div class="small muted">${m.watched}/${w.eps.length}화 시청 · 마지막 시청 ${ago(m.last.at)}</div>` : ''}
+      <div class="row">
+        <a class="btn pri" href="#play/${enc(tgt.id)}">${ICON.play}${m.last ? `이어보기 ${esc(epLabel(tgt))}` : '1화부터 재생'}</a>
+        ${m.last ? `<a class="btn ghost" href="#play/${enc(w.eps[0].id)}">처음부터</a>` : `<a class="btn ghost" href="#play/${enc(w.eps[w.eps.length - 1].id)}">최신화 보기</a>`}
+        <button class="btn ghost" data-fav="${esc(w.key)}">${U.fav[w.key] ? ICON.check + '찜함' : ICON.plus + '찜하기'}</button>
+        <button class="btn ghost" id="share">${ICON.share}공유</button>
+        <button class="btn ghost" id="report">${ICON.flag}신고·숨기기</button>
+      </div>
+    </div></section>
+  <div class="tabbar" role="tablist"><button class="${D.tab === 'eps' ? 'on' : ''}" data-tab="eps">회차 ${w.eps.length}</button><button class="${D.tab === 'sim' ? 'on' : ''}" data-tab="sim">비슷한 작품</button></div>
+  ${D.tab === 'eps' ? `
+    <div class="row" style="justify-content:space-between">
+      <div class="chips">${ranges > 1 ? Array.from({ length:ranges }, (_, i) => { const a = D.order === 'asc' ? i * R + 1 : w.eps.length - i * R, b = D.order === 'asc' ? Math.min(w.eps.length, (i + 1) * R) : Math.max(1, w.eps.length - (i + 1) * R + 1); return `<button class="chip ${D.range === i ? 'on' : ''}" data-range="${i}">${a}~${b}</button>`; }).join('') : ''}</div>
+      <div class="chips"><button class="chip ${D.order === 'asc' ? 'on' : ''}" data-order="asc">첫화부터</button><button class="chip ${D.order === 'desc' ? 'on' : ''}" data-order="desc">최신화부터</button></div>
+    </div>
+    <div class="eps">${eps.map(e => epRow(w, e)).join('')}</div>
+    <p class="muted small">조회수는 YouTube에서 받은 값입니다. 진행 막대와 시청 표시는 이 기기의 내 기록입니다.</p>`
+  : `<div class="grid">${w.sim.filter(x => !U.hidden.includes(x.key)).map(x => card(x)).join('')}</div>`}`;
+  bindFav();
+  $$('[data-tab]').forEach(b => b.onclick = () => { D.tab = b.dataset.tab; route(); });
+  $$('[data-range]').forEach(b => b.onclick = () => { D.range = +b.dataset.range; route(); });
+  $$('[data-order]').forEach(b => b.onclick = () => { D.order = b.dataset.order; D.range = 0; route(); });
+  $('#share').onclick = async () => { try { await navigator.clipboard.writeText(location.href); toast('링크를 복사했습니다.'); } catch (e) { toast(location.href); } };
+  $('#report').onclick = () => {
+    U.hidden.push(w.key); saveU('hidden'); prepare(CAT);
+    toast('이 작품을 숨겼습니다. 내 서재 > 설정에서 되돌릴 수 있습니다.');
+    if (CAT.reportUrl) window.open(reportLink(w), '_blank', 'noopener');
+    location.hash = '#home';
+  };
+}
+/* 신고 주소: 구글 폼 '미리 채워진 링크'의 {work}·{channel}·{url} 자리에 값을 넣습니다. 자리표시가 없으면 주소만 엽니다. */
+function reportLink(w) {
+  const u = CAT.reportUrl, page = location.href.split('#')[0] + '#work/' + enc(w.key);
+  const vals = { work:w.name, channel:`${w.chT} (https://www.youtube.com/channel/${w.ch})`, url:page };
+  const re = /(?:\{|%7B)(work|channel|url)(?:\}|%7D)/gi;  // 구글 폼이 만든 주소에는 %7Bwork%7D로 들어 있음
+  return u.replace(re, (_, k) => enc(vals[k.toLowerCase()]));
+}
+function epRow(w, e, cur) {
+  const p = U.prog[e.id]; const pct = p && p.d ? Math.min(100, Math.round(p.t / p.d * 100)) : 0; const done = p && p.d && p.t >= p.d - 20;
+  const isNew = e.p >= Date.now() - 24 * HOUR;
+  return `<a class="ep ${cur === e.id ? 'cur' : ''}" href="#play/${enc(e.id)}">
+    <span class="no">${e.ep ?? e.i + 1}</span>
+    <span class="thumb">${CAT.demo ? `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(epLabel(e))}</span></span>` : `<span class="ph" style="--h:${hash(w.key) % 360}"></span><img loading="lazy" src="${thumbUrl(e.id)}" alt="" onerror="this.remove()">`}${pct ? `<span class="pbar"><i style="width:${pct}%"></i></span>` : ''}</span>
+    <span><span class="tt">${isNew ? '<span class="ep-b">NEW</span>' : ''}${esc(e.t)}</span><br><span class="muted small">${fmtDur(e.du)} · ${ago(e.p)} · YouTube 조회수 ${fmtNum(e.vw)}${done ? ' · <span class="done">다 봄</span>' : pct ? ` · ${pct}% 시청` : ''}</span></span>
+    <span class="tail muted small">${fmtDur(e.du)}</span></a>`;
+}
+
+/* ================= 플레이어 ================= */
+let ytReady = null, player = null, playing = null, tick = null, wakeLock = null, sleepT = null, sleepEnd = 0, sleepMode = '', nextT = null;
+function loadYT() {
+  if (ytReady) return ytReady;
+  ytReady = new Promise((res, rej) => {
+    window.onYouTubeIframeAPIReady = res;
+    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = () => { ytReady = null; rej(new Error('YouTube 플레이어를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.')); };
+    document.head.appendChild(s);
+  });
+  return ytReady;
+}
+function saveCur() {
+  if (!player || !playing || typeof player.getCurrentTime !== 'function') return;
+  try { const t = player.getCurrentTime(), d = player.getDuration(); if (d > 0 && t > 3) { U.prog[playing] = { t, d, at:Date.now() }; saveProg(); } } catch (e) {}
+}
+function stopPlayer() {
+  clearInterval(tick); clearInterval(nextT); tick = nextT = null; saveCur();
+  if (player) { try { player.destroy(); } catch (e) {} }
+  player = null; playing = null;
+}
+function viewPlay(id) {
+  const v = VID[id];
+  if (!v) { $('#app').innerHTML = '<div class="empty">재생할 회차를 찾지 못했습니다.<a class="btn" href="#home">홈으로</a></div>'; return; }
+  const { w, e } = v; const prev = w.eps[e.i - 1], next = w.eps[e.i + 1];
+  $('#app').innerHTML = `<div class="play">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div class="listen-note muted small">듣기 모드 · 화면이 꺼지지 않게 유지합니다. 정책상 플레이어는 화면에 보여야 합니다.</div>
+      <div class="pbox">${CAT.demo ? '<div class="empty" style="position:absolute;inset:0;justify-content:center;border:0">예시 데이터라 재생되지 않습니다.<br>실제 수집이 끝나면 여기서 재생됩니다.</div>' : '<div id="yt"></div>'}</div>
+      <div class="next-up" id="next-up"><div><div class="small muted">다음 회차</div><strong>${next ? esc(epLabel(next) + ' · ' + next.t) : ''}</strong><div class="ring"><i id="ring"></i></div></div>
+        <div class="row"><button class="btn acc" id="go-next">${ICON.play}지금 재생</button><button class="btn" id="cancel-next">취소</button></div></div>
+      <div class="nl"><a class="muted small" href="#work/${enc(w.key)}">${esc(w.name)} · ${esc(epLabel(e))}</a><h1 style="font-size:21px;margin-top:4px">${esc(e.t)}</h1>
+        <div class="muted small" style="margin-top:4px">${esc(w.chT)} · ${ago(e.p)} · YouTube 조회수 ${fmtNum(e.vw)}</div></div>
+      <div class="pctl">
+        ${prev ? `<a class="btn" href="#play/${enc(prev.id)}">${ICON.left}이전</a>` : ''}
+        ${next ? `<a class="btn acc" href="#play/${enc(next.id)}">다음 회차${ICON.right}</a>` : '<span class="small muted">마지막 회차입니다</span>'}
+        <select id="speed" aria-label="재생 속도">${[0.75, 1, 1.25, 1.5, 1.75, 2].map(s => `<option value="${s}" ${U.prefs.speed == s ? 'selected' : ''}>${s}배속</option>`).join('')}</select>
+        <select id="sleep" aria-label="수면 타이머"><option value="">수면 타이머</option><option value="15">15분 후 정지</option><option value="30">30분 후 정지</option><option value="60">1시간 후 정지</option><option value="end">이번 회차 끝나면 정지</option></select>
+        <span class="small muted" id="sleep-left"></span>
+        <button class="btn" id="listen">${document.body.classList.contains('listen') ? '듣기 모드 끄기' : '듣기 모드'}</button>
+        <label class="sw"><input type="checkbox" id="autonext" ${U.prefs.autonext ? 'checked' : ''}>다음 회차 자동 재생</label>
+        <button class="btn ghost" data-fav="${esc(w.key)}">${U.fav[w.key] ? ICON.check + '찜함' : ICON.plus + '찜하기'}</button>
+        <a class="btn ghost sm" href="https://www.youtube.com/watch?v=${enc(id)}" target="_blank" rel="noopener">YouTube에서 보기</a>
+      </div>
+    </div>
+    <aside class="side nl"><div class="side-h"><strong>${esc(w.name)}</strong><span class="small muted">${e.i + 1} / ${w.eps.length}</span></div>
+      <div class="eps">${w.eps.map(x => epRow(w, x, id)).join('')}</div></aside>
+  </div>`;
+  bindFav();
+  const cur = $('.side .ep.cur'); if (cur) cur.scrollIntoView({ block:'center' });
+  $('#autonext').onchange = ev => { U.prefs.autonext = ev.target.checked; saveU('prefs'); };
+  $('#speed').onchange = ev => { U.prefs.speed = +ev.target.value; saveU('prefs'); try { player?.setPlaybackRate(U.prefs.speed); } catch (er) {} };
+  $('#sleep').onchange = ev => setSleep(ev.target.value);
+  if (sleepMode) { $('#sleep').value = sleepMode; renderSleep(); }
+  $('#listen').onclick = () => setListen(!document.body.classList.contains('listen'));
+  $('#cancel-next').onclick = () => { clearInterval(nextT); $('#next-up').classList.remove('on'); };
+  $('#go-next').onclick = () => { if (next) location.hash = '#play/' + enc(next.id); };
+  window.scrollTo(0, 0);
+  if (CAT.demo) { U.prog[id] = { t:(e.du || 600) * 0.4, d:e.du || 600, at:Date.now() }; saveProg(); return; }
+  const p = U.prog[id]; const start = p && p.d && p.t < p.d - 20 ? p.t : 0;
+  loadYT().then(() => {
+    if (location.hash !== '#play/' + enc(id)) return;
+    playing = id;
+    player = new YT.Player('yt', {
+      videoId:id, width:'100%', height:'100%',
+      playerVars:{ playsinline:1, autoplay:1, start:Math.floor(start), rel:0, ...(location.protocol.startsWith('http') ? { origin:location.origin } : {}) },
+      events:{
+        onReady:() => { try { player.setPlaybackRate(U.prefs.speed); } catch (er) {} },
+        onStateChange:ev => {
+          if (ev.data === YT.PlayerState.PLAYING) { clearInterval(tick); tick = setInterval(saveCur, 5000); }
+          if (ev.data === YT.PlayerState.PAUSED) saveCur();
+          if (ev.data === YT.PlayerState.ENDED) {
+            const d = player.getDuration(); U.prog[id] = { t:d, d, at:Date.now() }; saveProg(); updateBell();
+            if (sleepMode === 'end') { setSleep(''); toast('수면 타이머: 재생을 멈췄습니다.'); return; }
+            if (next && U.prefs.autonext) countdown(next);
+          }
+        },
+        onError:ev => {
+          const c = ev.data;
+          if (c === 101 || c === 150) toast('채널 주인이 외부 재생을 막은 영상입니다. YouTube에서 보기를 눌러 주세요.');
+          else if (c === 100) toast('삭제되었거나 비공개된 영상입니다. 다음 업데이트 때 목록에서 빠집니다.');
+          else if (c === 153) toast('재생 설정 오류입니다. http(s) 주소로 접속해야 재생됩니다.');
+          else toast(`재생 오류(${c})가 발생했습니다.`);
+        }
+      }
+    });
+  }).catch(er => toast(er.message));
+}
+function countdown(next) {
+  const box = $('#next-up'); if (!box) return;
+  box.classList.add('on'); let s = 5; const ring = $('#ring');
+  requestAnimationFrame(() => ring.style.width = '20%');
+  clearInterval(nextT);
+  nextT = setInterval(() => {
+    s--; if (ring) ring.style.width = `${(5 - s) * 20 + 20}%`;
+    if (s <= 0) { clearInterval(nextT); location.hash = '#play/' + enc(next.id); }
+  }, 1000);
+}
+function setSleep(v) {
+  clearTimeout(sleepT); sleepMode = v; sleepEnd = 0;
+  if (v && v !== 'end') { sleepEnd = Date.now() + +v * 60000; sleepT = setTimeout(() => { try { player?.pauseVideo(); } catch (e) {} sleepMode = ''; sleepEnd = 0; renderSleep(); toast('수면 타이머: 재생을 멈췄습니다.'); }, +v * 60000); }
+  if (v) toast(v === 'end' ? '이번 회차가 끝나면 멈춥니다.' : `${v}분 뒤 재생을 멈춥니다.`);
+  renderSleep();
+}
+function renderSleep() {
+  const el = $('#sleep-left'); if (!el) return;
+  el.textContent = sleepEnd ? `${Math.max(1, Math.round((sleepEnd - Date.now()) / 60000))}분 남음` : sleepMode === 'end' ? '이번 회차까지' : '';
+  const s = $('#sleep'); if (s && !sleepMode) s.value = '';
+}
+setInterval(renderSleep, 30000);
+async function setListen(on) {
+  document.body.classList.toggle('listen', on);
+  const b = $('#listen'); if (b) b.textContent = on ? '듣기 모드 끄기' : '듣기 모드';
+  if (on) { try { wakeLock = await navigator.wakeLock.request('screen'); toast('듣기 모드: 화면이 꺼지지 않게 합니다.'); } catch (e) { toast('이 브라우저는 화면 꺼짐 방지를 지원하지 않습니다.'); } }
+  else { try { await wakeLock?.release(); } catch (e) {} wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveCur();
+  else if (document.body.classList.contains('listen')) navigator.wakeLock?.request('screen').then(w => wakeLock = w).catch(() => {});
+});
+
+/* ================= 내 서재 ================= */
+function viewLibrary(tab = 'watching') {
+  const vis = visible().map(w => ({ w, m:mine(w) }));
+  const watching = vis.filter(x => x.m.last && !x.m.done).sort((a, b) => b.m.last.at - a.m.last.at);
+  const favs = vis.filter(x => U.fav[x.w.key]).sort((a, b) => U.fav[b.w.key] - U.fav[a.w.key]);
+  const done = vis.filter(x => x.m.done);
+  const news = newsList();
+  const hist = Object.entries(U.prog).filter(([id]) => VID[id]).sort((a, b) => b[1].at - a[1].at).slice(0, 60);
+  const tabs = [['watching', '보는 중', watching.length], ['news', '새 회차', news.length], ['fav', '찜한 작품', favs.length], ['done', '다 본 작품', done.length], ['history', '시청 기록', hist.length], ['settings', '설정', '']];
+  let body = '';
+  const grid = (arr, opt) => arr.length ? `<div class="grid">${arr.map(x => card(x.w, opt)).join('')}</div>` : '';
+  if (tab === 'watching') body = grid(watching, { resume:true }) || '<div class="empty">보고 있는 작품이 없습니다.<a class="btn acc" href="#home">작품 둘러보기</a></div>';
+  if (tab === 'news') body = news.length ? `<div class="grid">${news.map(x => card(x.w, { sub:`새 회차 ${x.m.fresh}개 · ${ago(x.w.upd)}` })).join('')}</div>` : '<div class="empty">찜하거나 보던 작품에 새 회차가 올라오면 여기에 모입니다.</div>';
+  if (tab === 'fav') body = grid(favs, {}) || '<div class="empty">찜한 작품이 없습니다. 작품 상세에서 찜하기를 누르면 새 회차 소식을 받을 수 있습니다.</div>';
+  if (tab === 'done') body = grid(done, {}) || '<div class="empty">끝까지 본 작품이 아직 없습니다.</div>';
+  if (tab === 'history') body = hist.length ? `<div class="row" style="justify-content:flex-end"><button class="btn sm" id="clear-hist">시청 기록 모두 지우기</button></div><div class="hist">${hist.map(([id, p]) => { const { w, e } = VID[id]; return `<a href="#play/${enc(id)}"><span class="thumb">${CAT.demo ? `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(epLabel(e))}</span></span>` : `<span class="ph" style="--h:${hash(w.key) % 360}"></span><img loading="lazy" src="${thumbUrl(id)}" alt="" onerror="this.remove()">`}<span class="pbar"><i style="width:${p.d ? Math.round(p.t / p.d * 100) : 0}%"></i></span></span><span><strong>${esc(w.name)}</strong> · ${esc(epLabel(e))}<br><span class="muted small">${ago(p.at)} 시청</span></span></a>`; }).join('')}</div>` : '<div class="empty">시청 기록이 없습니다.</div>';
+  if (tab === 'settings') body = `<div class="empty" style="text-align:left;align-items:flex-start">
+    <strong>내 기록 옮기기</strong><span class="small">시청 기록과 찜은 이 기기의 브라우저에 저장됩니다. 다른 기기로 옮기려면 백업 파일을 내보내 가져오세요.</span>
+    <div class="row"><button class="btn" id="exp">백업 내보내기</button><label class="btn" for="imp">백업 가져오기</label><input id="imp" type="file" accept="application/json" hidden></div>
+    <strong>숨긴 작품 ${U.hidden.length}개</strong><div class="row"><button class="btn" id="unhide" ${U.hidden.length ? '' : 'disabled'}>숨김 모두 해제</button></div></div>`;
+  $('#app').innerHTML = `<div class="page-h"><h1>내 서재</h1></div>
+    <div class="tabbar" style="overflow-x:auto">${tabs.map(([k, l, n]) => `<a class="${tab === k ? 'on' : ''}" href="#library/${k}">${l}${n !== '' ? ` <span class="muted">${n}</span>` : ''}</a>`).join('')}</div>${body}`;
+  const ch = $('#clear-hist'); if (ch) ch.onclick = () => { U.prog = {}; saveU('prog'); route(); };
+  const ex = $('#exp'); if (ex) ex.onclick = () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ app:'fantasy-shelf', v:2, prog:U.prog, fav:U.fav, hidden:U.hidden })], { type:'application/json' }));
+    a.download = `판타지서재-백업-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  };
+  const im = $('#imp'); if (im) im.onchange = async ev => {
+    try { const d = JSON.parse(await ev.target.files[0].text()); if (d.app !== 'fantasy-shelf') throw 0;
+      Object.assign(U.prog, d.prog || {}); Object.assign(U.fav, d.fav || {}); U.hidden = [...new Set([...U.hidden, ...(d.hidden || [])])];
+      saveU('prog'); saveU('fav'); saveU('hidden'); prepare(CAT); toast('백업을 가져왔습니다.'); route(); }
+    catch (e) { toast('판타지 서재 백업 파일이 아닙니다.'); }
+  };
+  const uh = $('#unhide'); if (uh) uh.onclick = () => { U.hidden = []; saveU('hidden'); prepare(CAT); toast('숨김을 해제했습니다.'); route(); };
+}
+
+/* ================= 공통 화면 요소 ================= */
+function banners() {
+  let h = '';
+  if (CAT.demo) h += `<div class="banner" style="margin-top:16px"><span><strong>미리보기용 예시 데이터입니다.</strong> 첫 자동 업데이트가 끝나면 실제 유튜브 작품으로 바뀝니다.</span></div>`;
+  const age = Date.now() - Date.parse(CAT.generatedAt);
+  if (!CAT.demo && age > 2 * DAY) h += `<div class="banner warn" style="margin-top:16px"><span>마지막 업데이트가 ${ago(Date.parse(CAT.generatedAt))}입니다. 자동 업데이트가 멈췄는지 확인이 필요합니다.</span></div>`;
+  return h ? `<div>${h}</div>` : '';
+}
+function bindBanner() {}
+function updateBell() {
+  const n = newsList().reduce((a, x) => a + x.m.fresh, 0);
+  const b = $('#bell'); let d = b.querySelector('.dot');
+  if (n) { if (!d) { d = document.createElement('span'); d.className = 'dot'; b.appendChild(d); } d.textContent = n > 99 ? '99+' : n; }
+  else if (d) d.remove();
+}
+function footer() {
+  $('#foot').innerHTML = `${esc(CAT.site || '판타지 서재')}는 YouTube에 공개된 영상을 YouTube 공식 플레이어로 보여 주는 정리 서비스입니다. 영상과 조회수의 권리는 각 채널과 YouTube에 있습니다.<br>
+    권리 확인 문구가 있는 채널만 자동으로 모으며, 권리 침해가 의심되면 작품 화면의 '신고·숨기기'로 알려 주세요. · 마지막 업데이트 ${new Date(CAT.generatedAt).toLocaleString('ko-KR')}`;
+}
+
+/* ================= 라우터 ================= */
+function route() {
+  const raw = location.hash.slice(1) || 'home';
+  const [view, ...rest] = raw.split('/'); const arg = decodeURIComponent(rest.join('/'));
+  if (view !== 'play') { stopPlayer(); if (document.body.classList.contains('listen')) setListen(false); }
+  else stopPlayer();
+  clearInterval(heroT);
+  const navKey = view === 'work' || view === 'play' ? '' : view;
+  $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === navKey));
+  if (view === 'work') viewWork(arg);
+  else if (view === 'play') viewPlay(arg);
+  else if (view === 'genre') viewGenre(arg);
+  else if (view === 'new') viewNew();
+  else if (view === 'search') viewSearch(arg);
+  else if (view === 'library') viewLibrary(arg || 'watching');
+  else viewHome();
+  if (view !== 'play' && view !== 'work') window.scrollTo(0, 0);
+  if (view === 'work') window.scrollTo(0, 0);
+  updateBell();
+}
+function skeleton() {
+  $('#app').innerHTML = `<div class="sk" style="height:380px;margin:0 -24px"></div>` + [1, 2, 3].map(() => `<div class="rail"><div class="sk" style="height:22px;width:180px"></div><div class="rail-row">${'<div class="sk" style="aspect-ratio:16/9"></div>'.repeat(6)}</div></div>`).join('');
+}
+window.addEventListener('hashchange', route);
+window.addEventListener('beforeunload', saveCur);
+(async function init() {
+  skeleton();
+  try {
+    const r = await fetch('catalog.json', { cache:'no-cache' });
+    if (!r.ok) throw new Error(r.status);
+    prepare(await r.json());
+  } catch (e) {
+    $('#app').innerHTML = `<div class="empty" style="margin-top:30px"><strong>작품 목록(catalog.json)을 불러오지 못했습니다.</strong>
+      <span class="small">파일을 직접 열면 브라우저가 막습니다. 폴더에서 <code>python -m http.server 8000</code>을 실행한 뒤 <code>http://localhost:8000</code>으로 접속하거나, GitHub Pages 주소로 접속해 주세요.</span></div>`;
+    return;
+  }
+  LS.set('fs2_visit', Date.now());
+  footer(); route();
+})();
+</script>
+</body>
+</html>
