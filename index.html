@@ -222,6 +222,33 @@ body.listen .listen-note{display:block;text-align:center}
 .ch-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .ch-head .ch-av{width:72px;height:72px;font-size:26px}
 .ch-head h1{font-size:26px;font-weight:900;line-height:1.25}
+/* 채널 요약 숫자·비교 도표 */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 6px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.kpi .k{font-size:12.5px;color:var(--muted)}
+.kpi .v{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi .d{font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kpi a.d:hover{color:var(--ink)}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.kpi .v{font-size:20px}}
+.chart-box{background:linear-gradient(180deg,#141d31,#10172a);border:1px solid rgba(120,140,190,.22);border-radius:14px;padding:16px 18px 12px;margin-top:22px}
+.chart-box .rail-h{margin-bottom:10px;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.bars{display:flex;flex-direction:column;gap:2px}
+.bar-row{display:grid;grid-template-columns:24px minmax(90px,200px) 1fr 70px;gap:10px;align-items:center;padding:5px 6px;border-radius:8px;position:relative}
+.bar-row:hover,.bar-row:focus-visible{background:rgba(255,255,255,.05)}
+.bar-row .rk{font-size:13px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.bar-row .nm{display:flex;gap:8px;align-items:center;min-width:0;font-size:13.5px}
+.bar-row .nm span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-row .ch-av{width:24px;height:24px;font-size:11px;flex:none}
+.bar-row .tr{height:14px;position:relative}
+.bar-row .tr i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:0 4px 4px 0;min-width:2px;transition:width .35s ease}
+.bar-row .vl{font-size:13px;font-variant-numeric:tabular-nums;text-align:right;color:var(--ink)}
+.bar-tip{position:absolute;z-index:5;left:240px;bottom:calc(100% + 2px);background:#0b1020;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;line-height:1.5;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.bar-row:hover .bar-tip,.bar-row:focus-visible .bar-tip{opacity:1;transform:none}
+@media (max-width:760px){.bar-row{grid-template-columns:20px 96px 1fr 56px;gap:8px}.bar-tip{left:30px}.chart-box{padding:14px 12px 10px}}
+.ch-card .rkb{position:absolute;top:8px;right:10px;font-size:12px;font-weight:800;color:var(--muted)}
+.ch-card{position:relative}
+.ch-card .share{height:4px;border-radius:2px;background:var(--panel-2);overflow:hidden;margin-top:4px}
+.ch-card .share i{display:block;height:100%;background:var(--accent);border-radius:0 2px 2px 0}
 a.ch-link{color:inherit;text-decoration:underline;text-decoration-color:rgba(255,255,255,.3);text-underline-offset:3px}
 a.ch-link:hover{text-decoration-color:currentColor}
 .hist{display:flex;flex-direction:column;gap:2px}
@@ -381,8 +408,8 @@ function recommend(limit = 20) {
     return { w, s };
   }).sort((a, b) => b.s - a.s).slice(0, limit).map(x => x.w);
 }
-function trending() {
-  return visible().filter(w => Date.now() - w.upd < 7 * DAY).map(w => ({ w, v:Math.max(...w.eps.filter(e => Date.now() - e.p < 7 * DAY).map(e => e.vw), 0) }))
+function trending(base) {
+  return (base || visible()).filter(w => Date.now() - w.upd < 7 * DAY).map(w => ({ w, v:Math.max(...w.eps.filter(e => Date.now() - e.p < 7 * DAY).map(e => e.vw), 0) }))
     .sort((a, b) => b.v - a.v).slice(0, 10).map(x => x.w);
 }
 function newsList() {
@@ -464,13 +491,16 @@ function bindFav() {
     saveU('fav'); b.innerHTML = U.fav[k] ? ICON.check + '찜함' : ICON.plus + '찜하기'; updateBell();
   });
 }
+function contList(vis) {
+  return vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last && !x.m.done && !(U.dismiss[x.w.key] > x.m.last.at)).sort((a, b) => b.m.last.at - a.m.last.at).map(x => x.w);
+}
 function viewHome() {
   railN = 0;
   const vis = visible();
   const recs = recommend(24);
   const today = vis.filter(w => newEps(w).length).sort((a, b) => newEps(b).length - newEps(a).length || b.upd - a.upd);
   const heroList = [...new Set([...recs.slice(0, 2), ...today.slice(0, 3), ...[...vis].sort((a, b) => b.eps.length - a.eps.length).slice(0, 2)])].slice(0, 5);
-  const cont = vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last && !x.m.done && !(U.dismiss[x.w.key] > x.m.last.at)).sort((a, b) => b.m.last.at - a.m.last.at).map(x => x.w);
+  const cont = contList(vis);
   const news = newsList().map(x => x.w);
   const lastWatched = cont[0] || vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last).sort((a, b) => b.m.last.at - a.m.last.at)[0]?.w;
   const top = trending();
@@ -540,37 +570,119 @@ function channelsOf(vis) {
   for (const w of vis) {
     const c = m[w.ch] || (m[w.ch] = { id:w.ch, t:w.chT || '이름 없는 채널', th:CAT.channels[w.ch]?.th || '', works:[], eps:0, upd:0, views:0 });
     c.works.push(w); c.eps += w.eps.length; c.upd = Math.max(c.upd, w.upd);
-    for (const e of w.eps) c.views += e.vw || 0;  // 총 시청 건수 = 채널 회차들의 YouTube 조회수 합
+    for (const e of w.eps) {  // 총 시청 건수 = 채널 회차들의 YouTube 조회수 합
+      c.views += e.vw || 0;
+      if (!c.best || (e.vw || 0) > (c.best.vw || 0)) c.best = { ...e, w };
+      if (Date.now() - e.p < 7 * DAY) { c.wk = (c.wk || 0) + 1; c.wkv = (c.wkv || 0) + (e.vw || 0); }
+    }
   }
   return Object.values(m);
 }
 function chAvatar(c) {
   return `<span class="ch-av" style="--h:${hash(c.id) % 360}">${esc((c.t || '?').trim().charAt(0))}${c.th && !CAT.demo ? `<img loading="lazy" src="${esc(c.th)}" alt="" onerror="this.remove()">` : ''}</span>`;
 }
+const workViews = w => w.eps.reduce((a, e) => a + (e.vw || 0), 0);
+function kpi(k, v, d) { return `<div class="kpi"><span class="k">${k}</span><span class="v">${v}</span>${d ? `<span class="d">${d}</span>` : ''}</div>`; }
+function bestLink(b, withCh) {
+  return b ? `<a class="d" href="#play/${enc(b.id)}">${esc(b.w.name)} ${esc(epLabel(b))}${withCh ? ' · ' + esc(b.w.chT) : ''}</a>` : '';
+}
+// 가로 막대 도표(한 가지 값, 한 색). 막대에 손을 올리면 자세한 숫자.
+const CH_METRICS = {
+  views:{ t:'총 시청', f:c => c.views, fmt:fmtNum },
+  avg:{ t:'회차당 평균 시청', f:c => c.eps ? c.views / c.eps : 0, fmt:fmtNum },
+  wk:{ t:'최근 7일 새 회차', f:c => c.wk || 0, fmt:n => `${n}화` },
+  works:{ t:'작품 수', f:c => c.works.length, fmt:n => `${n}편` },
+};
+function chBars(chs, mk, total) {
+  const M = CH_METRICS[mk];
+  const rows = chs.map(c => ({ c, v:M.f(c) })).sort((a, b) => b.v - a.v).slice(0, 10);
+  const max = rows[0]?.v || 1;
+  return rows.map((r, i) => `<a class="bar-row" href="#channel/${enc(r.c.id)}" aria-label="${esc(r.c.t)} ${M.t} ${M.fmt(r.v)}">
+    <span class="rk">${i + 1}</span><span class="nm">${chAvatar(r.c)}<span>${esc(r.c.t)}</span></span>
+    <span class="tr"><i style="width:${Math.max(r.v / max * 100, 0.5)}%"></i></span><span class="vl">${M.fmt(r.v)}</span>
+    <span class="bar-tip"><b>${esc(r.c.t)}</b><br>총 시청 ${fmtNum(r.c.views)} (전체의 ${(r.c.views / (total || 1) * 100).toFixed(1)}%)<br>작품 ${r.c.works.length} · 회차 ${r.c.eps} · 회차당 평균 ${fmtNum(r.c.eps ? r.c.views / r.c.eps : 0)}<br>최근 7일 새 회차 ${r.c.wk || 0}화</span></a>`).join('');
+}
+function workBars(works) {
+  const rows = works.map(w => ({ w, v:workViews(w) })).sort((a, b) => b.v - a.v).slice(0, 10);
+  const max = rows[0]?.v || 1;
+  return rows.map((r, i) => `<a class="bar-row" href="#work/${enc(r.w.key)}" aria-label="${esc(r.w.name)} 총 시청 ${fmtNum(r.v)}">
+    <span class="rk">${i + 1}</span><span class="nm"><span>${esc(r.w.name)}</span></span>
+    <span class="tr"><i style="width:${Math.max(r.v / max * 100, 0.5)}%"></i></span><span class="vl">${fmtNum(r.v)}</span>
+    <span class="bar-tip"><b>${esc(r.w.name)}</b><br>총 시청 ${fmtNum(r.v)} · ${r.w.eps.length}화<br>회차당 평균 ${fmtNum(r.v / r.w.eps.length)} · ${ago(r.w.upd)} 업데이트</span></a>`).join('');
+}
 function viewChannel(cid) {
   const vis = visible();
+  railN = 0;
   if (!cid) {
+    const all = channelsOf(vis);
+    const total = all.reduce((a, c) => a + c.views, 0);
+    const eps = all.reduce((a, c) => a + c.eps, 0);
+    const wk = all.reduce((a, c) => a + (c.wk || 0), 0);
+    const best = all.map(c => c.best).filter(Boolean).sort((a, b) => (b.vw || 0) - (a.vw || 0))[0];
+    const byViews = [...all].sort((a, b) => b.views - a.views);
+    const top3 = byViews.slice(0, 3).reduce((a, c) => a + c.views, 0);
+    const hot = [...all].sort((a, b) => (b.wkv || 0) - (a.wkv || 0))[0];
     const sort = U.prefs.chSort2 || 'views';
-    const chs = channelsOf(vis).sort(sort === 'works' ? (a, b) => b.works.length - a.works.length || b.views - a.views
+    const mk = CH_METRICS[U.prefs.chMetric] ? U.prefs.chMetric : 'views';
+    const rank = new Map(byViews.map((c, i) => [c.id, i + 1]));
+    const chs = [...all].sort(sort === 'works' ? (a, b) => b.works.length - a.works.length || b.views - a.views
       : sort === 'name' ? (a, b) => a.t.localeCompare(b.t, 'ko') : sort === 'upd' ? (a, b) => b.upd - a.upd : (a, b) => b.views - a.views);
-    $('#app').innerHTML = `<div class="page-h"><h1>채널<span class="muted" style="font-size:17px;font-weight:500;margin-left:8px">(${chs.length})</span></h1>
-      <div class="chips scroll"><button class="chip ${sort === 'views' ? 'on' : ''}" data-chsort="views">총 시청 많은 순</button><button class="chip ${sort === 'upd' ? 'on' : ''}" data-chsort="upd">최근 업데이트순</button><button class="chip ${sort === 'works' ? 'on' : ''}" data-chsort="works">작품 많은 순</button><button class="chip ${sort === 'name' ? 'on' : ''}" data-chsort="name">이름순</button></div></div>
-      ${chs.length ? `<div class="ch-grid">${chs.map(c => `<a class="ch-card" href="#channel/${enc(c.id)}">${chAvatar(c)}<span style="min-width:0;display:flex;flex-direction:column;gap:2px">
-        <span class="nm">${esc(c.t)}</span><span class="st">총 시청 ${fmtNum(c.views)} · 작품 ${c.works.length} · 회차 ${c.eps} · ${ago(c.upd)} 업데이트</span>
-        <span class="ws">${c.works.slice().sort((a, b) => b.upd - a.upd).slice(0, 3).map(w => esc(w.name)).join(' · ')}</span></span></a>`).join('')}</div>`
-        : '<div class="empty">아직 정리된 채널이 없습니다.</div>'}`;
+    const cont = contList(vis);
+    const maxV = byViews[0]?.views || 1;
+    $('#app').innerHTML = `<div class="page-h"><h1>채널<span class="muted" style="font-size:17px;font-weight:500;margin-left:8px">(${all.length})</span></h1>
+      <div class="muted small">AI 드라마를 올리는 채널 ${all.length}곳의 시청 현황 · YouTube 조회수 기준 · ${ago(Date.parse(CAT.generatedAt))} 업데이트</div></div>
+      ${all.length ? `<div class="kpis">
+        ${kpi('전체 총 시청', fmtNum(total), `상위 3개 채널이 ${(top3 / (total || 1) * 100).toFixed(0)}% 차지`)}
+        ${kpi('가장 많이 본 회차', fmtNum(best?.vw), bestLink(best, true))}
+        ${kpi('작품 · 회차', `${vis.length.toLocaleString()} · ${eps.toLocaleString()}`, `채널당 평균 작품 ${(vis.length / all.length).toFixed(1)}편`)}
+        ${kpi('최근 7일 새 회차', `${wk.toLocaleString()}화`, hot && hot.wkv ? `이번 주 가장 뜨거운 채널: ${esc(hot.t)}` : '')}
+      </div>` : ''}
+      ${rail('이어보기', cont.slice(0, 20), { total:cont.length, resume:true, remove:true, cls:'cont' })}
+      ${rail('인기 TOP 10', trending(vis), { rank:true, cls:'top10', sub:'최근 7일 새 회차 · YouTube 조회수 기준' })}
+      ${all.length ? `<section class="chart-box"><div class="rail-h"><div><h2>채널 비교 <span class="cnt">TOP 10</span></h2><div class="sub">막대를 누르면 그 채널로 갑니다</div></div>
+        <div class="chips scroll">${Object.entries(CH_METRICS).map(([k, m]) => `<button class="chip ${mk === k ? 'on' : ''}" data-chmetric="${k}">${m.t}</button>`).join('')}</div></div>
+        <div class="bars" id="ch-bars">${chBars(all, mk, total)}</div></section>` : ''}
+      <section class="rail"><div class="rail-h"><div><h2>전체 채널<span class="cnt">(${all.length})</span></h2></div></div>
+      <div class="chips scroll" style="margin-bottom:12px"><button class="chip ${sort === 'views' ? 'on' : ''}" data-chsort="views">총 시청 많은 순</button><button class="chip ${sort === 'upd' ? 'on' : ''}" data-chsort="upd">최근 업데이트순</button><button class="chip ${sort === 'works' ? 'on' : ''}" data-chsort="works">작품 많은 순</button><button class="chip ${sort === 'name' ? 'on' : ''}" data-chsort="name">이름순</button></div>
+      ${chs.length ? `<div class="ch-grid">${chs.map(c => `<a class="ch-card" href="#channel/${enc(c.id)}"><span class="rkb">${rank.get(c.id)}위</span>${chAvatar(c)}<span style="min-width:0;display:flex;flex-direction:column;gap:2px">
+        <span class="nm" style="padding-right:34px">${esc(c.t)}</span><span class="st">총 시청 <b style="color:var(--ink)">${fmtNum(c.views)}</b> · 작품 ${c.works.length} · 회차 ${c.eps} · ${ago(c.upd)}</span>
+        <span class="ws">${c.works.slice().sort((a, b) => workViews(b) - workViews(a)).slice(0, 3).map(w => esc(w.name)).join(' · ')}</span>
+        <span class="share" title="1위 채널 대비"><i style="width:${Math.max(c.views / maxV * 100, 1)}%"></i></span></span></a>`).join('')}</div>`
+        : '<div class="empty">아직 정리된 채널이 없습니다.</div>'}</section>`;
     $$('[data-chsort]').forEach(b => b.onclick = () => { U.prefs.chSort2 = b.dataset.chsort; saveU('prefs'); route(); });
+    $$('[data-chmetric]').forEach(b => b.onclick = () => {
+      U.prefs.chMetric = b.dataset.chmetric; saveU('prefs');
+      $$('[data-chmetric]').forEach(x => x.classList.toggle('on', x === b));
+      $('#ch-bars').innerHTML = chBars(all, b.dataset.chmetric, total);
+    });
+    bindRails();
     return;
   }
   const c = channelsOf(vis.filter(w => w.ch === cid))[0];
   if (!c) { $('#app').innerHTML = `<div class="empty" style="margin-top:30px">이 채널의 작품이 없습니다.<a class="btn acc" href="#channel">채널 목록</a></div>`; return; }
+  const allCh = channelsOf(vis).sort((a, b) => b.views - a.views);
+  const rk = allCh.findIndex(x => x.id === cid) + 1;
+  const total = allCh.reduce((a, x) => a + x.views, 0);
   const list = applyG(c.works);
+  const cont = contList(c.works);
+  const pop = c.works.map(w => ({ w, v:workViews(w) })).sort((a, b) => b.v - a.v).slice(0, 10).map(x => x.w);
   $('#app').innerHTML = `<div class="page-h"><div class="ch-head">${chAvatar(c)}<div style="display:flex;flex-direction:column;gap:6px">
-      <h1>${esc(c.t)}</h1><div class="muted small">총 시청 ${fmtNum(c.views)} · 작품 ${c.works.length} · 회차 ${c.eps} · ${ago(c.upd)} 업데이트</div>
-      <div class="row"><a class="btn sm" href="https://www.youtube.com/channel/${enc(cid)}" target="_blank" rel="noopener">YouTube 채널 열기</a><a class="btn sm ghost" href="#channel">채널 목록</a></div></div></div>
-    ${filterBar()}</div>
-    ${list.length ? `<div class="grid">${list.map(w => card(w)).join('')}</div>` : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}`;
-  bindG();
+      <h1>${esc(c.t)}</h1><div class="muted small">채널 순위 ${rk}위 / ${allCh.length} · 전체 시청의 ${(c.views / (total || 1) * 100).toFixed(1)}% · ${ago(c.upd)} 업데이트</div>
+      <div class="row"><a class="btn sm" href="https://www.youtube.com/channel/${enc(cid)}" target="_blank" rel="noopener">YouTube 채널 열기</a><a class="btn sm ghost" href="#channel">채널 목록</a></div></div></div></div>
+    <div class="kpis">
+      ${kpi('총 시청', fmtNum(c.views), `회차당 평균 ${fmtNum(c.eps ? c.views / c.eps : 0)}`)}
+      ${kpi('가장 많이 본 회차', fmtNum(c.best?.vw), bestLink(c.best))}
+      ${kpi('작품 · 회차', `${c.works.length} · ${c.eps}`, `작품당 평균 ${(c.eps / c.works.length).toFixed(1)}화`)}
+      ${kpi('최근 7일 새 회차', `${c.wk || 0}화`, c.wk ? `이번 주 시청 ${fmtNum(c.wkv)}` : '이번 주에는 새 회차가 없습니다')}
+    </div>
+    ${rail('이어보기', cont.slice(0, 20), { total:cont.length, resume:true, remove:true, cls:'cont' })}
+    ${rail('인기 TOP 10', pop, { rank:true, cls:'top10', total:pop.length, sub:'이 채널 작품 · 총 시청(YouTube 조회수 합) 기준' })}
+    ${c.works.length > 1 ? `<section class="chart-box"><div class="rail-h"><div><h2>작품별 총 시청 <span class="cnt">TOP ${Math.min(10, c.works.length)}</span></h2><div class="sub">막대를 누르면 그 작품으로 갑니다</div></div></div>
+      <div class="bars">${workBars(c.works)}</div></section>` : ''}
+    <section class="rail"><div class="rail-h"><div><h2>전체 작품<span class="cnt">(${c.works.length})</span></h2></div></div>
+    <div style="margin-bottom:12px">${filterBar()}</div>
+    ${list.length ? `<div class="grid">${list.map(w => card(w)).join('')}</div>` : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}</section>`;
+  bindG(); bindRails();
 }
 function viewNew() {
   const list = visible().filter(w => newEps(w).length).sort((a, b) => b.upd - a.upd);
