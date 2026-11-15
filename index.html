@@ -464,12 +464,12 @@ function viewHome() {
   const genres = Object.keys(genreCount).sort((a, b) => (aff[b] || 0) - (aff[a] || 0) || genreCount[b] - genreCount[a]);
   let h = banners() + (heroList.length ? heroHTML(heroList) : '');
   h += rail('이어보기', cont.slice(0, 20), { total:cont.length, resume:true, remove:true, cls:'cont' });  // 빅배너 바로 아래
+  h += rail('인기 TOP 10', top, { rank:true, cls:'top10', sub:'최근 7일 새 회차 · YouTube 조회수 기준' });  // 이어보기 바로 아래
   h += `<div class="fresh"><i></i>매일 AI가 자동으로 찾아 정리합니다 · ${ago(Date.parse(CAT.generatedAt))} 업데이트 · 작품 ${CAT.stats.works.toLocaleString()} · 회차 ${CAT.stats.episodes.toLocaleString()}</div>`;
   h += rail('찜한 작품의 새 회차', news.slice(0, 20), { total:news.length, sub:'마지막으로 본 뒤 올라온 회차가 있습니다', more:'#library/news' });
   h += rail('오늘 업데이트', today.slice(0, 24), { total:today.length, sub:'최근 24시간 안에 새 회차가 올라온 작품', more:'#new' });
   if (lastWatched && lastWatched.sim.length) h += rail(`'${lastWatched.name}'을(를) 보셨으니`, lastWatched.sim.filter(w => !U.hidden.includes(w.key)));
   h += recs.length ? rail('취향 저격 추천', recs.slice(0, 20), { sub:'내가 본 장르와 비슷한 작품' }) : '';
-  h += rail('지금 많이 듣는 작품 TOP 10', top, { rank:true, cls:'top10', sub:'최근 7일 새 회차 · YouTube 조회수 기준' });
   h += rail('정주행하기 좋은 긴 작품', binge, { total:bingeAll.length, sub:'30화 이상' });
   for (const g of genres.slice(0, 8)) h += rail(g, vis.filter(w => w.genres.includes(g)).sort((a, b) => b.upd - a.upd).slice(0, 20), { total:genreCount[g], more:`#genre/${enc(g)}` });
   if (!vis.length) h += `<div class="empty">아직 정리된 작품이 없습니다. 첫 자동 업데이트가 끝나면 이곳이 채워집니다.</div>`;
