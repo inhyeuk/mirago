@@ -1,4 +1,4 @@
-# 공개 저장소(inhyeuk/fantasy-shelf)의 .github/workflows/daily-update.yml 원본.
+# 공개 저장소(inhyeuk/mirago)의 .github/workflows/daily-update.yml 원본.
 # 공개 저장소 Actions는 무료·무제한이라 수집을 여기서 돌린다.
 # 소스는 공개 저장소에 두지 않고, 실행할 때마다 비공개 저장소(vars.SRC_REPO)에서 배포 키로 받아 쓴다.
 # 수정은 이 파일에서 하고 공개 저장소에 그대로 복사한다.
@@ -59,8 +59,8 @@ jobs:
         working-directory: src
         run: |
           python -c "import json,sys; sys.exit('demo catalog' if json.load(open('docs/catalog.json',encoding='utf-8')).get('demo') else 0)"
-          git config user.name "fantasy-shelf-bot"
-          git config user.email "fantasy-shelf-bot@users.noreply.github.com"
+          git config user.name "mirago-bot"
+          git config user.email "mirago-bot@users.noreply.github.com"
           git add docs/catalog.json data/state.json
           git diff --cached --quiet || git commit --quiet -m "자동 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
           git push --quiet
@@ -71,8 +71,8 @@ jobs:
           cp ../src/docs/index.html ../src/docs/catalog.json ../src/docs/manifest.webmanifest ../src/docs/sw.js .
           mkdir -p icons && cp ../src/docs/icons/*.png icons/
           touch .nojekyll
-          git config user.name "fantasy-shelf-bot"
-          git config user.email "fantasy-shelf-bot@users.noreply.github.com"
+          git config user.name "mirago-bot"
+          git config user.email "mirago-bot@users.noreply.github.com"
           git add index.html catalog.json manifest.webmanifest sw.js icons .nojekyll
           git diff --cached --quiet || git commit --quiet -m "사이트 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
           git push --quiet
