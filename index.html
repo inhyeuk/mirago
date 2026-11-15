@@ -439,8 +439,8 @@ function viewHome() {
   const genreCount = {}; vis.forEach(w => w.genres.forEach(g => genreCount[g] = (genreCount[g] || 0) + 1));
   const aff = affinity();
   const genres = Object.keys(genreCount).sort((a, b) => (aff[b] || 0) - (aff[a] || 0) || genreCount[b] - genreCount[a]);
-  let h = rail('이어보기', cont.slice(0, 20), { resume:true, remove:true, cls:'cont' });  // 항상 맨 위
-  h += banners() + (heroList.length ? heroHTML(heroList) : '');
+  let h = banners() + (heroList.length ? heroHTML(heroList) : '');
+  h += rail('이어보기', cont.slice(0, 20), { resume:true, remove:true, cls:'cont' });  // 빅배너 바로 아래
   h += `<div class="fresh"><i></i>매일 AI가 자동으로 찾아 정리합니다 · ${ago(Date.parse(CAT.generatedAt))} 업데이트 · 작품 ${CAT.stats.works.toLocaleString()} · 회차 ${CAT.stats.episodes.toLocaleString()}</div>`;
   h += rail('찜한 작품의 새 회차', news.slice(0, 20), { sub:'마지막으로 본 뒤 올라온 회차가 있습니다', more:'#library/news' });
   h += rail('오늘 업데이트', today.slice(0, 24), { sub:'최근 24시간 안에 새 회차가 올라온 작품', more:'#new' });
