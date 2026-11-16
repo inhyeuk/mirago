@@ -78,6 +78,11 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 /* 히어로 */
 .hero{position:relative;margin:0 -24px;min-height:440px;display:flex;align-items:flex-end;overflow:hidden}
+/* 빅배너(홈): 슬라이드를 한 칸에 겹쳐 두고 페이드로 넘긴다 */
+#hero{display:grid;align-items:stretch}
+.hero-slide{position:relative;grid-area:1/1;display:flex;align-items:flex-end;opacity:0;visibility:hidden;transition:opacity 1.1s ease,visibility 0s linear 1.1s}
+.hero-slide.on{opacity:1;visibility:visible;z-index:1;transition:opacity 1.1s ease,visibility 0s}
+@media (prefers-reduced-motion:reduce){.hero-slide,.hero-slide.on{transition:none}}
 @media (max-width:760px){.hero{margin:0 -16px;min-height:380px}}
 .hero-bg{position:absolute;inset:0}
 .hero-bg .ph,.hero-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -95,8 +100,8 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .hero-nav.prev{left:14px}.hero-nav.next{right:14px}
 #hero.has-nav .hero-in{padding-left:76px}
 @media (hover:none),(max-width:760px){.hero-nav{display:none}#hero.has-nav .hero-in{padding-left:16px}}
-.hero-dots{position:absolute;right:24px;bottom:30px;display:flex;gap:6px}
-.hero-dots button{width:8px;height:8px;border-radius:4px;border:0;background:rgba(255,255,255,.35);padding:0}
+.hero-dots{position:absolute;right:24px;bottom:30px;display:flex;gap:6px;z-index:4}
+.hero-dots button{width:8px;height:8px;border-radius:4px;border:0;background:rgba(255,255,255,.35);padding:0;transition:width .4s ease,background .4s ease}
 .hero-dots button.on{width:22px;background:#fff}
 .fresh{font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
 .fresh i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
@@ -383,7 +388,10 @@ function mine(w) {
   for (const e of w.eps) { const p = U.prog[e.id]; if (!p) continue; if (!last || p.at > last.at) last = { ...p, e }; if (p.d && p.t >= p.d - 20) watched++; }
   const since = last ? last.at : (U.fav[w.key] || 0);
   const fresh = since ? w.eps.filter(e => e.p > since).length : 0;
-  return { last, watched, done: watched >= w.eps.length && w.eps.length > 0, fresh };
+  // 시청 완료 = 전부 봤거나, 시리즈 마지막 편을 끝까지 봄. 새 편이 붙으면 마지막 편이 바뀌어 저절로 '보는 중'으로 돌아간다.
+  const fin = e => { const p = e && U.prog[e.id]; return !!(p && p.d && p.t >= p.d - 20); };
+  const done = w.eps.length > 0 && (watched >= w.eps.length || fin(w.eps[w.eps.length - 1]));
+  return { last, watched, done, fresh };
 }
 function resumeEp(w) {
   const m = mine(w); if (!m.last) return w.eps[0];
@@ -445,7 +453,8 @@ function card(w, opt = {}) {
   const target = opt.resume ? resumeEp(w) : null;
   const href = opt.resume ? `#play/${enc(target.id)}` : `#work/${enc(w.key)}`;
   const badge = (U.fav[w.key] || m.last) && m.fresh && !m.done ? `<span class="b-up">새 회차 ${m.fresh}</span>` : n ? '<span class="b-new">NEW</span>' : '';
-  const ppct = opt.resume && m.last && m.last.d ? Math.round(m.last.t / m.last.d * 100) : pct;
+  const tp = target && U.prog[target.id];  // 이어볼 회차 자체의 진행률(다음 편으로 넘어갔으면 0부터)
+  const ppct = opt.resume ? (tp && tp.d ? Math.round(tp.t / tp.d * 100) : 0) : pct;
   const nx = opt.resume && hasNext(w);
   return `<div class="card${nx ? ' has-next' : ''}"><a href="${href}" aria-label="${esc(w.name)}">
     <div class="thumb">${thumbHTML(w)}${badge}${nx ? `<span class="b-next" title="다음 회차가 있습니다">NEXT${ICON.next}</span>` : ''}<span class="b-cnt">${opt.resume ? esc(epLabel(target)) : (w.eps.length > 1 ? w.eps.length + '화' : '단편')}</span>${(opt.resume || m.last) ? `<span class="pbar"><i style="width:${Math.max(ppct, 3)}%"></i></span>` : ''}</div></a>
@@ -460,7 +469,7 @@ function rail(title, list, opt = {}) {
   const id = 'r' + (++railN);
   return `<section class="rail ${opt.cls || ''}"><div class="rail-h"><div><h2>${esc(title)}<span class="cnt">(${(opt.total ?? list.length).toLocaleString()})</span></h2>${opt.sub ? `<div class="sub">${esc(opt.sub)}</div>` : ''}</div>
     <div class="acts">${opt.more ? `<a class="small muted" href="${opt.more}">전체보기</a>` : ''}<button class="arrow" data-scroll="${id}" data-dir="-1" aria-label="왼쪽으로">${ICON.left}</button><button class="arrow" data-scroll="${id}" data-dir="1" aria-label="오른쪽으로">${ICON.right}</button></div></div>
-    <div class="rail-row" id="${id}">${list.map((w, i) => opt.rank ? `<div class="rank"><span class="no">${i + 1}</span>${card(w)}</div>` : card(w, opt)).join('')}</div></section>`;
+    <div class="rail-row" id="${id}">${list.map((w, i) => opt.rank ? `<div class="rank"><span class="no">${i + 1}</span>${card(w)}</div>` : card(w, { ...opt, sub:null })).join('')}</div></section>`;  // 줄 설명(sub)은 제목 아래에만
 }
 function bindRails() {
   $$('[data-scroll]').forEach(b => b.onclick = () => { const r = document.getElementById(b.dataset.scroll); r.scrollBy({ left:r.clientWidth * 0.85 * +b.dataset.dir, behavior:'smooth' }); });
@@ -472,7 +481,7 @@ let heroT = null;
 function heroHTML(list) {
   return `<section class="hero${list.length > 1 ? ' has-nav' : ''}" id="hero">${list.map((w, i) => {
     const m = mine(w); const n = newEps(w).length; const tgt = resumeEp(w);
-    return `<div class="hero-slide" data-i="${i}" style="${i ? 'display:none' : ''}">
+    return `<div class="hero-slide${i ? '' : ' on'}" data-i="${i}"${i ? ' aria-hidden="true"' : ''}>
       <div class="hero-bg">${thumbHTML(w, w.eps[w.eps.length - 1], true)}</div>
       <div class="hero-in">
         <div class="row">${n ? `<span class="b-new" style="position:static">오늘 ${n}화 업데이트</span>` : ''}${w.genres.map(g => `<span class="tag">${esc(g)}</span>`).join('')}</div>
@@ -484,12 +493,19 @@ function heroHTML(list) {
       </div></div>`;
   }).join('')}${list.length > 1 ? `<button class="hero-nav prev" data-hnav="-1" aria-label="이전 추천">${ICON.left}</button><button class="hero-nav next" data-hnav="1" aria-label="다음 추천">${ICON.right}</button><div class="hero-dots">${list.map((_, i) => `<button data-hero="${i}" class="${i ? '' : 'on'}" aria-label="${i + 1}번째 추천"></button>`).join('')}</div>` : ''}</section>`;
 }
+const HERO_MS = 7000;  // 빅배너 자동 넘김 간격
 function bindHero(n) {
   clearInterval(heroT);
   if (n < 2) return;
-  let cur = 0;
-  const show = i => { cur = i; $$('.hero-slide').forEach(s => s.style.display = +s.dataset.i === i ? '' : 'none'); $$('[data-hero]').forEach(b => b.classList.toggle('on', +b.dataset.hero === i)); };
-  const go = i => { show((i + n) % n); clearInterval(heroT); };
+  let cur = 0, paused = false;
+  const show = i => {
+    cur = i;
+    $$('.hero-slide').forEach(s => { const on = +s.dataset.i === i; s.classList.toggle('on', on); s.setAttribute('aria-hidden', on ? 'false' : 'true'); });
+    $$('[data-hero]').forEach(b => b.classList.toggle('on', +b.dataset.hero === i));
+  };
+  const auto = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const start = () => { clearInterval(heroT); if (!auto) return; heroT = setInterval(() => { if (!$('#hero')) return clearInterval(heroT); if (!paused && !document.hidden) show((cur + 1) % n); }, HERO_MS); };
+  const go = i => { show((i + n) % n); start(); };  // 직접 넘기면 7초를 처음부터 다시 센다
   $$('[data-hero]').forEach(b => b.onclick = () => go(+b.dataset.hero));
   $$('[data-hnav]').forEach(b => b.onclick = () => go(cur + +b.dataset.hnav));
   const hs = $('#hero');
@@ -501,9 +517,10 @@ function bindHero(n) {
       const t = e.changedTouches[0]; const dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
       if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) go(cur + (dx < 0 ? 1 : -1));
     }, { passive:true });
+    hs.onmouseenter = () => { paused = true; };   // 마우스를 올려 두면 잠깐 멈춤
+    hs.onmouseleave = () => { paused = false; start(); };
   }
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) heroT = setInterval(() => { if (!$('#hero')) return clearInterval(heroT); show((cur + 1) % n); }, 7000);
-  const h = $('#hero'); if (h) { h.onmouseenter = () => clearInterval(heroT); }
+  start();
 }
 function bindFav() {
   $$('[data-fav]').forEach(b => b.onclick = () => {
@@ -512,19 +529,30 @@ function bindFav() {
     saveU('fav'); b.innerHTML = U.fav[k] ? ICON.check + '찜함' : ICON.plus + '찜하기'; updateBell();
   });
 }
+// 이어보기에서 뺀 작품도 뺀 뒤에 새 회차가 올라오면 다시 이어보기로
+const dismissed = (w, m) => { const t = U.dismiss[w.key]; return t > m.last.at && !w.eps.some(e => e.p > t); };
 function contList(vis) {
-  return vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last && !x.m.done && !(U.dismiss[x.w.key] > x.m.last.at)).sort((a, b) => b.m.last.at - a.m.last.at).map(x => x.w);
+  return vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last && !x.m.done && !dismissed(x.w, x.m)).sort((a, b) => b.m.last.at - a.m.last.at).map(x => x.w);
+}
+function doneList(vis) {
+  return vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last && x.m.done).sort((a, b) => b.m.last.at - a.m.last.at).map(x => x.w);
+}
+// 둘러보기 목록용: 이어보기·시청 완료에 있는 작품은 뺀다(검색·채널·서재에는 그대로)
+function unseen(vis) {
+  const seen = new Set([...contList(vis), ...doneList(vis)].map(w => w.key));
+  return vis.filter(w => !seen.has(w.key));
 }
 function viewHome() {
   railN = 0;
-  const vis = visible();
+  const all = visible();
+  const cont = contList(all), doneW = doneList(all);
+  const vis = unseen(all);
   const recs = recommend(24);
   const today = vis.filter(w => newEps(w).length).sort((a, b) => newEps(b).length - newEps(a).length || b.upd - a.upd);
   const heroList = [...new Set([...recs.slice(0, 2), ...today.slice(0, 3), ...[...vis].sort((a, b) => b.eps.length - a.eps.length).slice(0, 2)])].slice(0, 5);
-  const cont = contList(vis);
-  const news = newsList().map(x => x.w);
-  const lastWatched = cont[0] || vis.map(w => ({ w, m:mine(w) })).filter(x => x.m.last).sort((a, b) => b.m.last.at - a.m.last.at)[0]?.w;
-  const top = trending();
+  const news = newsList().map(x => x.w).filter(w => !cont.includes(w));
+  const lastWatched = cont[0] || all.map(w => ({ w, m:mine(w) })).filter(x => x.m.last).sort((a, b) => b.m.last.at - a.m.last.at)[0]?.w;
+  const top = trending(vis);
   const bingeAll = vis.filter(w => w.eps.length >= 30);
   const binge = bingeAll.sort((a, b) => b.eps.length - a.eps.length).slice(0, 20);
   const genreCount = {}; vis.forEach(w => w.genres.forEach(g => genreCount[g] = (genreCount[g] || 0) + 1));
@@ -536,11 +564,12 @@ function viewHome() {
   h += `<div class="fresh"><i></i>매일 AI가 자동으로 찾아 정리합니다 · ${ago(Date.parse(CAT.generatedAt))} 업데이트 · 작품 ${CAT.stats.works.toLocaleString()} · 회차 ${CAT.stats.episodes.toLocaleString()}</div>`;
   h += rail('찜한 작품의 새 회차', news.slice(0, 20), { total:news.length, sub:'마지막으로 본 뒤 올라온 회차가 있습니다', more:'#library/news' });
   h += rail('오늘 업데이트', today.slice(0, 24), { total:today.length, sub:'최근 24시간 안에 새 회차가 올라온 작품', more:'#new' });
-  if (lastWatched && lastWatched.sim.length) h += rail(`'${lastWatched.name}'을(를) 보셨으니`, lastWatched.sim.filter(w => !U.hidden.includes(w.key)));
+  if (lastWatched && lastWatched.sim.length) h += rail(`'${lastWatched.name}'을(를) 보셨으니`, lastWatched.sim.filter(w => vis.includes(w)));
   h += recs.length ? rail('취향 저격 추천', recs.slice(0, 20), { sub:'내가 본 장르와 비슷한 작품' }) : '';
   h += rail('정주행하기 좋은 긴 작품', binge, { total:bingeAll.length, sub:'30화 이상' });
   for (const g of genres.slice(0, 8)) h += rail(g, vis.filter(w => w.genres.includes(g)).sort((a, b) => b.upd - a.upd).slice(0, 20), { total:genreCount[g], more:`#genre/${enc(g)}` });
-  if (!vis.length) h += `<div class="empty">아직 정리된 작품이 없습니다. 첫 자동 업데이트가 끝나면 이곳이 채워집니다.</div>`;
+  h += rail('시청 완료', doneW, { cls:'done', sub:'끝까지 본 작품 · 새 회차가 올라오면 이어보기로 돌아갑니다' });  // 맨 아래
+  if (!all.length) h += `<div class="empty">아직 정리된 작품이 없습니다. 첫 자동 업데이트가 끝나면 이곳이 채워집니다.</div>`;
   $('#app').innerHTML = h;
   bindRails(); bindFav(); bindHero(heroList.length); bindBanner();
 }
@@ -575,7 +604,7 @@ function bindG() {
   for (const [id, k] of [['#g-sort', 'sort'], ['#g-narr', 'narr'], ['#g-len', 'len']]) { const el = $(id); if (!el) continue; el.value = G[k]; el.onchange = () => { G[k] = el.value; route(); }; }
 }
 function viewGenre(g) {
-  const vis = visible();
+  const vis = unseen(visible());
   const count = {}; vis.forEach(w => w.genres.forEach(x => count[x] = (count[x] || 0) + 1));
   const all = Object.keys(count).sort((a, b) => count[b] - count[a]);
   const list = applyG(g ? vis.filter(w => w.genres.includes(g)) : vis);
@@ -701,8 +730,9 @@ function viewChannel(cid) {
   bindG(); bindRails();
 }
 function viewNew() {
-  const list = visible().filter(w => newEps(w).length).sort((a, b) => b.upd - a.upd);
-  const week = visible().filter(w => Date.now() - w.upd < 7 * DAY && !newEps(w).length).sort((a, b) => b.upd - a.upd);
+  const base = unseen(visible());
+  const list = base.filter(w => newEps(w).length).sort((a, b) => b.upd - a.upd);
+  const week = base.filter(w => Date.now() - w.upd < 7 * DAY && !newEps(w).length).sort((a, b) => b.upd - a.upd);
   railN = 0;
   $('#app').innerHTML = `<div class="page-h"><h1>오늘 업데이트</h1><div class="muted small">최근 24시간 안에 새 회차가 올라온 작품 ${list.length}개 · ${ago(Date.parse(CAT.generatedAt))} 자동 업데이트</div></div>
     ${list.length ? `<div class="grid">${list.map(w => card(w, { sub:`${newEps(w).map(epLabel).slice(-3).join(', ')} 업데이트 · ${ago(w.upd)}` })).join('')}</div>` : '<div class="empty">오늘 올라온 새 회차가 아직 없습니다.</div>'}
