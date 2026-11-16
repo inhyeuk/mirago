@@ -1,6 +1,6 @@
 // Mirago 서비스 워커: 설치형 앱(PWA)용. 화면 파일만 보관하고, 영상(YouTube)은 절대 보관하지 않음.
 // 화면·작품 목록은 항상 네트워크 먼저(새 회차 즉시 반영), 오프라인일 때만 마지막으로 받은 것을 보여 줌.
-const CACHE = 'fs-shell-v14';
+const CACHE = 'fs-shell-v15';
 const SHELL = ['./', 'index.html', 'catalog.json', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {
