@@ -100,7 +100,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore, collection, doc, query, where, orderBy, limit, startAfter, getDocs, getDoc, writeBatch,
-         addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+         addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, increment } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 // 공개용 웹 설정값(비밀 아님). 보안은 Firestore 규칙(board/firestore.rules)이 맡는다
 const app = initializeApp({
@@ -171,7 +171,7 @@ function postHtml(id, p) {
   const mine = p.uid === uid;
   return `<div class="post" data-id="${esc(id)}">
     <div class="meta"><span class="cat c-${esc(p.cat)}">${esc(p.cat)}</span><span class="nick">${esc(p.nick)}</span><span>${fmt(p.at)}</span>
-      ${mine ? '<span>· 내 글</span>' : ''}${p.hidden ? '<span class="hiddenmark">· 숨김</span>' : ''}</div>
+      ${mine ? '<span>· 내 글</span>' : ''}${p.hidden ? '<span class="hiddenmark">· 숨김</span>' : ''}${isAdmin && p.rc ? `<span class="hiddenmark">· 신고 ${p.rc}</span>` : ''}</div>
     <div class="body">${esc(p.body)}</div>
     ${p.reply ? `<div class="reply"><b>운영자 답변 · ${fmt(p.replyAt)}</b>${esc(p.reply)}</div>` : ''}
     <div class="acts">
@@ -214,7 +214,10 @@ $('#list').onclick = async e => {
     } else if (act === 'report') {
       const d = await ask(`<b>신고 사유를 골라 주세요</b><p>${REASONS.map((r, i) => `<label style="display:block"><input type="radio" name="rs" value="${r}" ${i ? '' : 'checked'}> ${r}</label>`).join('')}</p>`, '신고');
       if (!d) return;
-      await addDoc(collection(db, 'reports'), { postId: id, reason: d.querySelector('input[name=rs]:checked').value, uid, at: serverTimestamp() });
+      const b = writeBatch(db);
+      b.set(doc(db, 'reports', `${id}_${uid}`), { postId: id, reason: d.querySelector('input[name=rs]:checked').value, uid, at: serverTimestamp() });
+      b.update(doc(db, 'posts', id), { rc: increment(1) });
+      try { await b.commit(); } catch (err) { if (String(err.code).includes('permission')) { btn.textContent = '이미 신고함'; btn.disabled = true; return; } throw err; }
       btn.textContent = '신고됨'; btn.disabled = true;
     } else if (act === 'reply') {
       const d = await ask(`<b>운영자 답변</b><textarea id="rp" maxlength="1000" style="min-height:120px">${esc(p.reply || '')}</textarea><p class="muted small">비워 두면 답변을 지웁니다.</p>`, '저장');
