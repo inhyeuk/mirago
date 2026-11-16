@@ -140,6 +140,9 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .b-dur svg{width:12px;height:12px;opacity:.85;flex:none}
 .b-dur .of{font-weight:400;opacity:.7}
 .has-pbar .b-dur,.has-pbar .b-cnt{bottom:10px}
+/* 작은 썸네일(폰·좁은 열): 두 배지가 겹치지 않게 아이콘을 빼고 글자를 줄인다 */
+.thumb{container-type:inline-size}
+@container (max-width:220px){.b-dur,.b-cnt{font-size:11px;padding:1px 5px;gap:2px;left:auto}.b-dur{left:4px;bottom:4px}.b-cnt{right:4px;bottom:4px}.has-pbar .b-dur,.has-pbar .b-cnt{bottom:8px}.b-dur svg,.b-cnt svg{display:none}}
 .b-cnt .of{font-weight:400;opacity:.7}
 .ep-total{display:inline-flex;align-items:center;gap:5px;font-weight:600;color:#fff}
 .ep-total svg{width:15px;height:15px;opacity:.85}
