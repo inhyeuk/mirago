@@ -199,6 +199,31 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 @media (max-width:1000px){.play{grid-template-columns:1fr}}
 .pbox{position:relative;aspect-ratio:16/9;min-height:200px;background:#000;border-radius:12px;overflow:hidden}
 .pbox iframe,.pbox #yt{position:absolute;inset:0;width:100%;height:100%;border:0}
+/* 전체 화면(Mirago 자체): 플레이어 옆에 '다음 편' 칸을 붙인다 — 플레이어 위에는 아무것도 덮지 않음(YouTube 정책) */
+.pfs-bar,.fs-next{display:none}
+body.pfs{overflow:hidden}
+body.pfs .pstage{position:fixed;inset:0;z-index:2000;background:#000;display:flex;flex-direction:column}
+body.pfs .pfs-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;height:42px;padding:0 12px 0 16px;color:#cfd5e4;font-size:14px;flex:none;min-width:0}
+body.pfs .pfs-bar .tt{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+body.pfs .pstage-row{flex:1;display:flex;min-height:0}
+body.pfs .pbox{flex:1 1 0;aspect-ratio:auto;min-height:0;border-radius:0}
+body.pfs .fs-next{display:flex;align-items:center;justify-content:flex-start;width:0;overflow:hidden;flex:none;transition:width .6s ease}
+body.pfs .pstage.nx .fs-next{width:min(340px,40vw)}
+.fs-next-in{position:relative;width:min(340px,40vw);flex:none;padding:0 18px;opacity:0;transform:translateX(24px);transition:opacity .5s ease .15s,transform .5s ease .15s}
+.pstage.nx .fs-next-in{opacity:1;transform:none}
+.fs-go{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;background:none;border:0;padding:0;color:#e8ecf4;cursor:pointer}
+.fs-poster{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#1a2133;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.fs-poster img,.fs-poster .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.fs-left{position:absolute;left:8px;top:8px;z-index:2;background:rgba(10,14,24,.82);color:#fff;font-size:12px;font-weight:700;border-radius:6px;padding:4px 8px}
+.fs-play{position:absolute;inset:0;z-index:1;display:grid;place-items:center;background:rgba(0,0,0,.18);transition:background .2s}
+.fs-play svg{width:46px;height:46px;color:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+.fs-go:hover .fs-play{background:rgba(0,0,0,.05)}
+.fs-go .lab{font-size:12px;color:var(--accent);font-weight:700;margin-top:4px}
+.fs-go strong{font-size:15px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fs-go .btn{align-self:flex-start;margin-top:4px}
+.fs-x{position:absolute;right:10px;top:-34px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;padding:0}
+@media (max-width:640px){.fs-next-in{padding:0 10px}.fs-go strong{font-size:13px}.fs-go .btn{display:none}}
+@media (prefers-reduced-motion:reduce){body.pfs .fs-next,.fs-next-in{transition:none}}
 .pctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .pctl select{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .sw{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--muted)}
@@ -363,6 +388,7 @@ const ICON = {
   flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 21V4h11l-2 4 2 4H5"/></svg>',
   left:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m15 6-6 6 6 6"/></svg>',
   right:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>',
+  full:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
   x:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>'
 };
 
@@ -863,6 +889,7 @@ function epRow(w, e, cur) {
 }
 
 /* ================= 플레이어 ================= */
+let fsT = null, fsNextOff = false;
 let ytReady = null, player = null, playing = null, counted = null, tick = null, wakeLock = null, sleepT = null, sleepEnd = 0, sleepMode = '', nextT = null;
 function loadYT() {
   if (ytReady) return ytReady;
@@ -879,7 +906,7 @@ function saveCur() {
   try { const t = player.getCurrentTime(), d = player.getDuration(); if (d > 0 && t > 3) { U.prog[playing] = { t, d, at:Date.now() }; saveProg(); } } catch (e) {}
 }
 function stopPlayer() {
-  clearInterval(tick); clearInterval(nextT); tick = nextT = null; saveCur();
+  clearInterval(tick); clearInterval(nextT); clearInterval(fsT); tick = nextT = fsT = null; saveCur();
   if (player) { try { player.destroy(); } catch (e) {} }
   player = null; playing = null;
 }
@@ -890,12 +917,27 @@ function viewPlay(id) {
   $('#app').innerHTML = `<div class="play">
     <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
       <div class="listen-note muted small">듣기 모드 · 화면이 꺼지지 않게 유지합니다. 정책상 플레이어는 화면에 보여야 합니다.</div>
-      <div class="pbox">${CAT.demo ? '<div class="empty" style="position:absolute;inset:0;justify-content:center;border:0">예시 데이터라 재생되지 않습니다.<br>실제 수집이 끝나면 여기서 재생됩니다.</div>' : '<div id="yt"></div>'}</div>
+      <div class="pstage" id="pstage">
+        <div class="pfs-bar"><span class="tt">${esc(w.name)} · ${esc(epLabel(e))}</span><button class="btn sm" id="fs-exit">전체 화면 끝내기 (Esc)</button></div>
+        <div class="pstage-row">
+          <div class="pbox">${CAT.demo ? '<div class="empty" style="position:absolute;inset:0;justify-content:center;border:0">예시 데이터라 재생되지 않습니다.<br>실제 수집이 끝나면 여기서 재생됩니다.</div>' : '<div id="yt"></div>'}</div>
+          ${next ? `<aside class="fs-next" aria-label="다음 편"><div class="fs-next-in">
+            <button class="fs-x" id="fs-x" aria-label="다음 편 안내 닫기">${ICON.x}</button>
+            <button class="fs-go" id="fs-go">
+              <span class="fs-poster">${thumbHTML(w, next, true)}<span class="fs-left">${w.eps.length - 1 - e.i > 1 ? `남은 ${w.eps.length - 1 - e.i}편` : '마지막 편'}</span><span class="fs-play">${ICON.play}</span></span>
+              <span class="lab">다음 편 이어 보기</span>
+              <strong>${esc(epLabel(next))} · ${esc(next.t)}</strong>
+              <span class="small muted">${next.du ? fmtDur(next.du) + ' · ' : ''}${esc(w.name)}</span>
+              <span class="btn acc sm">${ICON.play}다음 편 보기</span>
+            </button></div></aside>` : ''}
+        </div>
+      </div>
       <div class="next-up" id="next-up"><div><div class="small muted">다음 회차</div><strong>${next ? esc(epLabel(next) + ' · ' + next.t) : ''}</strong><div class="ring"><i id="ring"></i></div></div>
         <div class="row"><button class="btn acc" id="go-next">${ICON.play}지금 재생</button><button class="btn" id="cancel-next">취소</button></div></div>
       <div class="nl"><a class="muted small" href="#work/${enc(w.key)}">${esc(w.name)} · ${esc(epLabel(e))}</a><h1 style="font-size:21px;margin-top:4px">${esc(e.t)}</h1>
         <div class="muted small" style="margin-top:4px">${esc(w.chT)} · ${ago(e.p)} · YouTube 조회수 ${fmtNum(e.vw)}</div></div>
       <div class="pctl">
+        <button class="btn" id="fs-btn" title="전체 화면 — 끝나기 20초 전 오른쪽에 다음 편이 나옵니다">${ICON.full}전체 화면</button>
         ${prev ? `<a class="btn" href="#play/${enc(prev.id)}">${ICON.left}이전</a>` : ''}
         ${next ? `<a class="btn acc" href="#play/${enc(next.id)}">다음 회차${ICON.right}</a>` : '<span class="small muted">마지막 회차입니다</span>'}
         <select id="speed" aria-label="재생 속도">${[0.75, 1, 1.25, 1.5, 1.75, 2].map(s => `<option value="${s}" ${U.prefs.speed == s ? 'selected' : ''}>${s}배속</option>`).join('')}</select>
@@ -919,6 +961,13 @@ function viewPlay(id) {
   $('#listen').onclick = () => setListen(!document.body.classList.contains('listen'));
   $('#cancel-next').onclick = () => { clearInterval(nextT); $('#next-up').classList.remove('on'); };
   $('#go-next').onclick = () => { if (next) location.hash = '#play/' + enc(next.id); };
+  $('#fs-btn').onclick = () => enterFs();
+  $('#fs-exit').onclick = () => exitFs();
+  if (next) {
+    $('#fs-go').onclick = () => { location.hash = '#play/' + enc(next.id); };  // 전체 화면은 그대로 유지
+    $('#fs-x').onclick = () => { fsNextOff = true; $('#pstage').classList.remove('nx'); };
+  }
+  fsNextOff = false;
   window.scrollTo(0, 0);
   if (CAT.demo) { U.prog[id] = { t:(e.du || 600) * 0.4, d:e.du || 600, at:Date.now() }; saveProg(); return; }
   const p = U.prog[id]; const start = p && p.d && p.t < p.d - 20 ? p.t : 0;
@@ -927,9 +976,9 @@ function viewPlay(id) {
     playing = id;
     player = new YT.Player('yt', {
       videoId:id, width:'100%', height:'100%',
-      playerVars:{ playsinline:1, autoplay:1, start:Math.floor(start), rel:0, ...(location.protocol.startsWith('http') ? { origin:location.origin } : {}) },
+      playerVars:{ playsinline:1, autoplay:1, start:Math.floor(start), rel:0, fs:0, ...(location.protocol.startsWith('http') ? { origin:location.origin } : {}) },
       events:{
-        onReady:() => { try { player.setPlaybackRate(U.prefs.speed); } catch (er) {} },
+        onReady:() => { try { player.setPlaybackRate(U.prefs.speed); } catch (er) {} clearInterval(fsT); if (next) fsT = setInterval(() => checkFsNext(next), 1000); },
         onStateChange:ev => {
           if (ev.data === YT.PlayerState.PLAYING) { clearInterval(tick); tick = setInterval(saveCur, 5000); if (counted !== id) { counted = id; STAT.play(); } }
           if (ev.data === YT.PlayerState.PAUSED) saveCur();
@@ -937,6 +986,7 @@ function viewPlay(id) {
             const d = player.getDuration(); U.prog[id] = { t:d, d, at:Date.now() }; saveProg(); updateBell();
             if (sleepMode === 'end') { setSleep(''); toast('수면 타이머: 재생을 멈췄습니다.'); return; }
             if (next && U.prefs.autonext) countdown(next);
+            if (next) checkFsNext(next, true);
           }
         },
         onError:ev => {
@@ -950,6 +1000,28 @@ function viewPlay(id) {
     });
   }).catch(er => toast(er.message));
 }
+// 전체 화면: 끝나기 20초 전(배속 반영한 실제 남은 시간)부터 오른쪽에 다음 편 칸을 연다. 뒤로 감으면 다시 닫힘.
+const FS_NEXT_SEC = 20;
+function checkFsNext(next, ended) {
+  const st = $('#pstage'); if (!st || !player || typeof player.getCurrentTime !== 'function') return;
+  let left = 0;
+  if (!ended) { try { const d = player.getDuration(), t = player.getCurrentTime(); if (!(d > 0)) return; left = (d - t) / (player.getPlaybackRate() || 1); } catch (e) { return; } }
+  if (left > FS_NEXT_SEC + 5) fsNextOff = false;
+  st.classList.toggle('nx', document.body.classList.contains('pfs') && !fsNextOff && left <= FS_NEXT_SEC);
+}
+async function enterFs() {
+  document.body.classList.add('pfs');
+  try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen({ navigationUI:'hide' }); } catch (e) {}  // 안 되면 화면 꽉 채우기만
+  try { await screen.orientation.lock('landscape'); } catch (e) {}
+}
+function exitFs() {
+  if (!document.body.classList.contains('pfs')) return;
+  document.body.classList.remove('pfs'); $('#pstage')?.classList.remove('nx');
+  try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
+  try { screen.orientation.unlock(); } catch (e) {}
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitFs(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && document.body.classList.contains('pfs')) exitFs(); });
 function countdown(next) {
   const box = $('#next-up'); if (!box) return;
   box.classList.add('on'); let s = 5; const ring = $('#ring');
@@ -1113,7 +1185,7 @@ function route() {
   const raw = location.hash.slice(1) || 'home';
   const [view, ...rest] = raw.split('/'); const arg = decodeURIComponent(rest.join('/'));
   $('#back').hidden = view === 'home';
-  if (view !== 'play') { stopPlayer(); if (document.body.classList.contains('listen')) setListen(false); }
+  if (view !== 'play') { stopPlayer(); exitFs(); if (document.body.classList.contains('listen')) setListen(false); }
   else stopPlayer();
   clearInterval(heroT);
   const navKey = view === 'work' || view === 'play' ? '' : view;
