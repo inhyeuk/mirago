@@ -44,6 +44,11 @@ nav.main{display:flex;gap:2px}
 nav.main a{padding:7px 12px;border-radius:8px;color:var(--muted);white-space:nowrap}
 nav.main a.on{color:var(--ink);font-weight:700}
 .spacer{flex:1}
+.app-dl{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 9px;font-size:13px;color:var(--muted);margin-right:4px;white-space:nowrap}
+.app-dl svg{width:16px;height:16px}
+.app-dl:hover{color:var(--ink);border-color:var(--muted)}
+@media (max-width:760px){.app-dl{padding:5px 8px}.app-dl span{display:none}}
+html.in-app .app-dl{display:none}
 .icon-btn{position:relative;background:transparent;border:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
 .icon-btn:hover{background:var(--panel-2)}
 .icon-btn svg{width:22px;height:22px}
@@ -273,6 +278,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
     </nav>
     <div class="spacer"></div>
     <button class="btn install-btn" id="install" hidden title="PC·휴대폰에 앱으로 설치합니다">앱 설치</button>
+    <a class="app-dl" href="app.html" title="PC·안드로이드 앱 설치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>앱 설치</span></a>
     <a class="icon-btn" href="#search" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
     <a class="icon-btn" href="#library/news" aria-label="새 회차 소식" id="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
   </div>
@@ -288,6 +294,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script>try{if(/[?&]app=/.test(location.search))sessionStorage.setItem('fs_app','1');if(sessionStorage.getItem('fs_app'))document.documentElement.classList.add('in-app')}catch(e){}</script>
 <script>
 "use strict";
 /* ================= 공통 ================= */

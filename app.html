@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mirago 앱 내려받기</title>
+<meta name="description" content="Mirago를 PC(Windows)와 안드로이드 앱으로 설치하세요. 작품 목록은 매일 자동으로 새로워집니다.">
+<meta name="theme-color" content="#0a0e18">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta property="og:title" content="Mirago 앱 내려받기">
+<meta property="og:description" content="AI로 만든 영상을 작품별로 모아 보는 Mirago — PC·안드로이드 앱">
+<meta property="og:image" content="https://inhyeuk.github.io/mirago/icons/icon-512.png">
+<style>
+:root{--bg:#0a0e18;--panel:#131a29;--panel-2:#1b2337;--line:#273149;--ink:#eef1f8;--muted:#9099b2;--accent:#3d7bff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px 60px}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:21px;text-decoration:none}
+.logo img{width:34px;height:34px;border-radius:9px}
+.back{color:var(--muted);text-decoration:none;font-size:14px}
+.back:hover{color:var(--ink)}
+.hero{text-align:center;padding:36px 0 26px}
+.hero img{width:96px;height:96px;border-radius:24px;box-shadow:0 10px 40px rgba(61,123,255,.25)}
+.hero h1{font-size:34px;font-weight:900;margin:18px 0 6px;letter-spacing:-.5px}
+.hero p{color:var(--muted);margin:0;font-size:16px}
+.ver{display:inline-block;margin-top:12px;font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 12px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+@media (max-width:760px){.cards{grid-template-columns:1fr}.hero h1{font-size:27px}}
+.card{background:linear-gradient(180deg,#141d31,#10172a);border:1px solid rgba(120,140,190,.22);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.card h2{margin:0;font-size:20px;display:flex;align-items:center;gap:10px}
+.card h2 svg{width:26px;height:26px;flex:none}
+.card .sub{color:var(--muted);font-size:14px;margin:0}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;background:var(--accent);color:#fff;border-radius:12px;padding:13px 18px;font-weight:700;text-decoration:none;font-size:16px;border:1px solid var(--accent)}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500;font-size:14px;padding:9px 14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.qr{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.qr img{width:104px;height:104px;border-radius:8px;background:#fff;flex:none}
+.qr p{margin:0;font-size:13.5px;color:var(--muted)}
+ol{margin:0;padding-left:20px;font-size:14px;color:#c9cfdf}
+ol li{margin:3px 0}
+.note{font-size:13px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0}
+section.more{margin-top:34px}
+section.more h3{font-size:18px;margin:0 0 10px}
+.faq{display:grid;gap:10px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+summary{cursor:pointer;font-weight:700}
+details p{color:#c9cfdf;font-size:14.5px;margin:8px 0 0}
+footer{margin-top:40px;color:var(--muted);font-size:12.5px;text-align:center}
+code{background:var(--panel-2);border-radius:5px;padding:1px 6px;font-size:12.5px;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="./"><img src="icons/icon-192.png" alt="">Mirago</a>
+    <a class="back" href="./">웹에서 바로 보기 →</a>
+  </header>
+
+  <div class="hero">
+    <img src="icons/icon-512.png" alt="Mirago 아이콘">
+    <h1>Mirago 앱으로 보기</h1>
+    <p>AI로 만든 영상을 작품별로 모아 보는 Mirago를 PC와 휴대폰에 설치하세요.<br>작품 목록은 매일 자동으로 새로워져서 앱을 다시 받을 필요가 없어요.</p>
+    <span class="ver" id="ver">무료 · 최신 판</span>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h2><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm0 13 7.5 1.1v-7H3v5.9Zm8.4 1.2L21 21v-8.4h-9.6v7.1Zm0-15.4v7.2H21V3l-9.6 1.3Z"/></svg>Windows PC</h2>
+      <p class="sub">Windows 10·11 · 약 12MB · 관리자 권한 필요 없음</p>
+      <a class="btn" href="https://github.com/inhyeuk/mirago/releases/latest/download/MiragoSetup.exe">설치 파일 내려받기</a>
+      <div class="row"><a class="btn ghost" href="https://github.com/inhyeuk/mirago/releases/latest/download/Mirago-Windows-portable.zip">설치 없이 쓰는 판(zip)</a></div>
+      <ol>
+        <li><b>MiragoSetup.exe</b>를 실행하고 '확인'을 누르세요.</li>
+        <li>'Windows의 PC 보호' 창이 뜨면 <b>추가 정보 → 실행</b>을 누르세요.</li>
+        <li>바탕화면과 시작 메뉴에 Mirago가 생겨요.</li>
+      </ol>
+      <p class="note">F11로 전체 화면, F5로 새로고침. 지우려면 설정 › 앱 › 설치된 앱에서 Mirago를 제거하세요.</p>
+    </div>
+
+    <div class="card">
+      <h2><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 9.48 19.44 6.3a.38.38 0 0 0-.66-.38l-1.86 3.22a11.5 11.5 0 0 0-9.84 0L5.22 5.92a.38.38 0 1 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52ZM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/></svg>안드로이드</h2>
+      <p class="sub">Android 7 이상 · 약 28MB · APK 직접 설치</p>
+      <a class="btn" href="https://github.com/inhyeuk/mirago/releases/latest/download/Mirago-android.apk">APK 내려받기</a>
+      <div class="qr"><img src="icons/qr-apk.png" alt="안드로이드 APK 내려받기 QR 코드"><p>PC에서 보고 계시면 휴대폰 카메라로 이 QR을 찍으세요. 바로 APK를 내려받아요.</p></div>
+      <ol>
+        <li>내려받은 <b>Mirago-android.apk</b>를 누르세요.</li>
+        <li>'출처를 알 수 없는 앱' 안내가 나오면 <b>설정 → 이 출처 허용</b>을 켜세요.</li>
+        <li>'설치'를 누르면 끝. Play 프로텍트 안내가 뜨면 <b>무시하고 설치</b>를 고르세요.</li>
+      </ol>
+    </div>
+  </div>
+
+  <section class="more">
+    <h3>자주 묻는 질문</h3>
+    <div class="faq">
+      <details><summary>웹과 앱은 무엇이 다른가요?</summary><p>보는 작품과 기능은 같아요. 앱은 바탕화면·홈 화면에서 바로 열리고, 휴대폰 뒤로 버튼과 전체 화면 재생이 더 자연스러워요. 영상은 웹과 똑같이 YouTube 공식 플레이어로 재생돼요.</p></details>
+      <details><summary>업데이트는 어떻게 하나요?</summary><p>작품 목록과 화면은 매일 자동으로 새로워져요. 앱 자체가 바뀌는 새 판이 나오면 앱 안에 알림이 뜨고, 이 페이지에서 다시 받아 설치하면 돼요(이어보기·찜 기록은 그대로 남아요).</p></details>
+      <details><summary>왜 '알 수 없는 앱'·'PC 보호' 안내가 뜨나요?</summary><p>Mirago는 Play 스토어·Microsoft 스토어를 거치지 않고 개인이 직접 배포하는 무료 앱이라 이런 안내가 떠요. 이 페이지(inhyeuk.github.io/mirago)와 GitHub 릴리스에서 받은 파일만 설치하세요.</p></details>
+      <details><summary>받은 파일이 진짜인지 확인하고 싶어요</summary><p>릴리스마다 <a href="https://github.com/inhyeuk/mirago/releases/latest">SHA256SUMS.txt</a>가 함께 올라가요. 안드로이드 APK 서명 인증서 SHA-256: <code>0b1c1f3776631bf74d13338517d465762e261f2a0e6ad36c645fb107f476b795</code></p></details>
+      <details><summary>WebView2가 필요하다고 나와요(PC)</summary><p>Windows 10·11에는 보통 들어 있어요. 없다는 안내가 뜨면 Microsoft의 <a href="https://developer.microsoft.com/microsoft-edge/webview2/" rel="noopener">WebView2 런타임</a>(무료)을 설치한 뒤 Mirago를 다시 여세요.</p></details>
+    </div>
+  </section>
+
+  <footer>Mirago는 YouTube에 공개된 영상을 YouTube 공식 플레이어로 보여 주는 정리 서비스입니다. 영상과 조회수의 권리는 각 채널과 YouTube에 있습니다.<br><a href="https://github.com/inhyeuk/mirago/releases">모든 릴리스</a> · <a href="./">Mirago 웹</a></footer>
+</div>
+<script>
+// 최신 판 번호 표시(실패해도 페이지는 그대로)
+fetch('https://api.github.com/repos/inhyeuk/mirago/releases/latest').then(r => r.ok ? r.json() : null).then(j => {
+  if (j && j.tag_name) document.getElementById('ver').textContent = `무료 · 최신 판 ${j.tag_name} · ${new Date(j.published_at).toLocaleDateString('ko-KR')}`;
+}).catch(() => {});
+</script>
+</body>
+</html>
