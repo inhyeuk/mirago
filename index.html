@@ -813,7 +813,7 @@ function epRow(w, e, cur) {
 }
 
 /* ================= 플레이어 ================= */
-let ytReady = null, player = null, playing = null, tick = null, wakeLock = null, sleepT = null, sleepEnd = 0, sleepMode = '', nextT = null;
+let ytReady = null, player = null, playing = null, counted = null, tick = null, wakeLock = null, sleepT = null, sleepEnd = 0, sleepMode = '', nextT = null;
 function loadYT() {
   if (ytReady) return ytReady;
   ytReady = new Promise((res, rej) => {
@@ -881,7 +881,7 @@ function viewPlay(id) {
       events:{
         onReady:() => { try { player.setPlaybackRate(U.prefs.speed); } catch (er) {} },
         onStateChange:ev => {
-          if (ev.data === YT.PlayerState.PLAYING) { clearInterval(tick); tick = setInterval(saveCur, 5000); }
+          if (ev.data === YT.PlayerState.PLAYING) { clearInterval(tick); tick = setInterval(saveCur, 5000); if (counted !== id) { counted = id; STAT.play(); } }
           if (ev.data === YT.PlayerState.PAUSED) saveCur();
           if (ev.data === YT.PlayerState.ENDED) {
             const d = player.getDuration(); U.prog[id] = { t:d, d, at:Date.now() }; saveProg(); updateBell();
@@ -1020,6 +1020,7 @@ function showAgree() {
     LS.set('fs3_agree', { v: AGREE_VER, at: Date.now(), items: boxes.map(b => b.dataset.k) });
     document.documentElement.style.overflow = '';
     d.remove();
+    STAT.visit();
   };
 }
 
@@ -1097,6 +1098,41 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 }
 window.addEventListener('hashchange', route);
 window.addEventListener('beforeunload', saveCur);
+/* 익명 이용 통계 (2026-11-16): 날짜별 합계 숫자만 Firestore(mirago-app) stats/{날짜}에 +1. 기기 ID·개인정보는 보내지 않음.
+   - 접속: 동의한 기기가 하루 한 번(dev, dev_종류, 처음 온 기기면 new·new_종류)  - 재생: 회차 재생이 시작될 때(하루 기기당 100회까지) */
+const STAT = {
+  url: 'https://firestore.googleapis.com/v1/projects/mirago-app/databases/(default)/documents:commit?key=AIzaSyAlOWhVYU_0BpJqpnGGEa6RVc1KeQ5vJ0U',
+  first: !LS.get('fs2_visit', 0) && !(LS.get('mg_stat', {}) || {}).seen,   // 이 사이트에 처음 온 기기(기존 이용자 제외)
+  kind() { try { return sessionStorage.getItem('fs_app_kind') || 'web'; } catch (e) { return 'web'; } },
+  day() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); },
+  on() { return location.protocol === 'https:' && !CAT.demo && (LS.get('fs3_agree', null) || {}).v === AGREE_VER; },
+  send(fields) {
+    if (!this.on()) return;
+    const doc = 'projects/mirago-app/databases/(default)/documents/stats/' + this.day();
+    try {
+      fetch(this.url, { method:'POST', keepalive:true, headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ writes:[{ transform:{ document:doc, fieldTransforms: fields.map(f => ({ fieldPath:f, increment:{ integerValue:'1' } })) } }] }) }).catch(() => {});
+    } catch (e) {}
+  },
+  visit() {
+    if (!this.on()) return;
+    const d = this.day(), st = LS.get('mg_stat', {});
+    if (st.day === d) return;
+    const k = this.kind(), f = ['dev', 'dev_' + k];
+    if (this.first) { f.push('new', 'new_' + k); this.first = false; }
+    LS.set('mg_stat', { day:d, plays:0, seen:1 });
+    this.send(f);
+  },
+  play() {
+    if (!this.on()) return;
+    const d = this.day(), st = LS.get('mg_stat', {});
+    if (st.day !== d) { this.visit(); return this.play(); }
+    if ((st.plays || 0) >= 100) return;
+    st.plays = (st.plays || 0) + 1; LS.set('mg_stat', st);
+    const k = this.kind(); this.send(['plays', 'plays_' + k]);
+  },
+};
+
 (async function init() {
   skeleton();
   try {
@@ -1108,6 +1144,7 @@ window.addEventListener('beforeunload', saveCur);
       <span class="small">파일을 직접 열면 브라우저가 막습니다. 폴더에서 <code>python -m http.server 8000</code>을 실행한 뒤 <code>http://localhost:8000</code>으로 접속하거나, GitHub Pages 주소로 접속해 주세요.</span></div>`;
     return;
   }
+  STAT.visit();
   LS.set('fs2_visit', Date.now());
   footer(); route();
 })();
