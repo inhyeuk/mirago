@@ -13,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://i.ytimg.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -48,6 +49,7 @@ nav.main a.on{color:var(--ink);font-weight:700}
 .app-dl svg{width:16px;height:16px}
 .app-dl:hover{color:var(--ink);border-color:var(--muted)}
 @media (max-width:760px){.app-dl{padding:5px 8px}.app-dl span{display:none}}
+@media (max-width:400px){.top-in{gap:8px;padding-left:12px;padding-right:12px}.app-dl{margin-right:0}.icon-btn{width:34px}}
 html.in-app .app-dl:not(.fb-link){display:none}
 .icon-btn{position:relative;background:transparent;border:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
 .icon-btn:hover{background:var(--panel-2)}
@@ -122,6 +124,8 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .arrow{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;padding:0}
 @media (max-width:760px){.arrow{display:none}}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px 12px}
+.more{display:flex;justify-content:center;padding:18px 0 4px}
+.more .btn{min-width:200px;justify-content:center}
 @media (max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
 /* 카드 */
 .card{scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;position:relative}
@@ -139,15 +143,18 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .ph span{position:relative;font-weight:700;font-size:15px;line-height:1.3;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .b-new{position:absolute;left:6px;top:6px;background:var(--new);color:#fff;font-size:11px;font-weight:900;border-radius:4px;padding:1px 6px;letter-spacing:.3px}
 .b-up{position:absolute;left:6px;top:6px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px}
-.b-cnt{position:absolute;right:6px;bottom:6px;display:inline-flex;align-items:center;gap:4px;background:rgba(8,11,20,.86);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:2px 7px 2px 6px;font-size:12px;font-weight:600;line-height:18px;font-variant-numeric:tabular-nums;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.b-cnt svg{width:13px;height:13px;opacity:.85;flex:none}
-.b-dur{position:absolute;left:6px;bottom:6px;display:inline-flex;align-items:center;gap:4px;background:rgba(8,11,20,.86);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:2px 7px 2px 6px;font-size:12px;font-weight:600;line-height:18px;font-variant-numeric:tabular-nums;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.b-dur svg{width:12px;height:12px;opacity:.85;flex:none}
+.b-cnt{position:absolute;right:6px;bottom:6px;display:inline-flex;align-items:center;gap:4px;background:rgba(8,11,20,.9);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:2px 7px 2px 6px;font-size:12px;font-weight:600;line-height:18px;font-variant-numeric:tabular-nums}
+.b-cnt svg,.b-cnt .ic{width:13px;height:13px;opacity:.85;flex:none}
+.ic{display:inline-block;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+.ic-eps{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Crect x='3' y='8' width='14' height='12' rx='2'/%3E%3Cpath d='M7 4.5h12a2 2 0 0 1 2 2V16'/%3E%3Cpath d='M8.5 11.5v5l4.5-2.5z' fill='black' stroke='none'/%3E%3C/svg%3E")}
+.ic-clock{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 7.5V12l3 2'/%3E%3C/svg%3E")}
+.b-dur{position:absolute;left:6px;bottom:6px;display:inline-flex;align-items:center;gap:4px;background:rgba(8,11,20,.9);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:2px 7px 2px 6px;font-size:12px;font-weight:600;line-height:18px;font-variant-numeric:tabular-nums}
+.b-dur svg,.b-dur .ic{width:12px;height:12px;opacity:.85;flex:none}
 .b-dur .of{font-weight:400;opacity:.7}
 .has-pbar .b-dur,.has-pbar .b-cnt{bottom:10px}
 /* 작은 썸네일(폰·좁은 열): 두 배지가 겹치지 않게 아이콘을 빼고 글자를 줄인다 */
 .thumb{container-type:inline-size}
-@container (max-width:220px){.b-dur,.b-cnt{font-size:11px;padding:1px 5px;gap:2px;left:auto}.b-dur{left:4px;bottom:4px}.b-cnt{right:4px;bottom:4px}.has-pbar .b-dur,.has-pbar .b-cnt{bottom:8px}.b-dur svg,.b-cnt svg{display:none}}
+@container (max-width:220px){.b-dur,.b-cnt{font-size:11px;padding:1px 5px;gap:2px;left:auto}.b-dur{left:4px;bottom:4px}.b-cnt{right:4px;bottom:4px}.has-pbar .b-dur,.has-pbar .b-cnt{bottom:8px}.b-dur svg,.b-cnt svg,.b-dur .ic,.b-cnt .ic{display:none}}
 .b-cnt .of{font-weight:400;opacity:.7}
 .ep-total{display:inline-flex;align-items:center;gap:5px;font-weight:600;color:#fff}
 .ep-total svg{width:15px;height:15px;opacity:.85}
@@ -366,7 +373,8 @@ let toastT;
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
 const fmtDur = s => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}` : `${m}:${String(x).padStart(2,'0')}`; };
 const fmtTotal = s => { const tm = Math.round(s / 60), h = Math.floor(tm / 60); return h ? `${h}시간 ${tm % 60}분` : `${tm}분`; };
-const fmtNum = n => new Intl.NumberFormat('ko-KR', { notation:'compact', maximumFractionDigits:1 }).format(n || 0);
+const NUMF = new Intl.NumberFormat('ko-KR', { notation:'compact', maximumFractionDigits:1 });
+const fmtNum = n => NUMF.format(n || 0);
 function ago(ms) {
   const d = Date.now() - ms;
   if (d < HOUR) return `${Math.max(1, Math.round(d / 60000))}분 전`;
@@ -447,7 +455,7 @@ const thumbUrl = (id, big) => `https://i.ytimg.com/vi/${id}/${big ? 'hqdefault' 
 function thumbHTML(w, e, big) {
   e = e || w.eps[w.eps.length - 1];
   const ph = `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(w.name)}</span></span>`;
-  return CAT.demo ? ph : ph + `<img loading="lazy" src="${thumbUrl(e.id, big)}" alt="" onerror="this.remove()">`;
+  return CAT.demo ? ph : ph + `<img loading="lazy" decoding="async" src="${thumbUrl(e.id, big)}" alt="" onerror="this.remove()">`;
 }
 
 /* ================= 추천 ================= */
@@ -491,7 +499,7 @@ function durBadge(w, ep) {
   const e = ep || w.eps[0];
   if (!e || !e.du) return '';
   const lab = ep ? '' : (w.eps.length > 1 ? '<span class="of">1편</span>' : '');
-  return `<span class="b-dur" title="${ep ? '지금 보는 회차 길이' : w.eps.length > 1 ? '1편 길이' : '영상 길이'}">${ICON.clock}${lab}${fmtDur(e.du)}</span>`;
+  return `<span class="b-dur" title="${ep ? '지금 보는 회차 길이' : w.eps.length > 1 ? '1편 길이' : '영상 길이'}"><i class="ic ic-clock"></i>${lab}${fmtDur(e.du)}</span>`;
 }
 function card(w, opt = {}) {
   const m = mine(w); const n = newEps(w).length;
@@ -503,13 +511,47 @@ function card(w, opt = {}) {
   const ppct = opt.resume ? (tp && tp.d ? Math.round(tp.t / tp.d * 100) : 0) : pct;
   const nx = opt.resume && hasNext(w);
   return `<div class="card${nx ? ' has-next' : ''}"><a href="${href}" aria-label="${esc(w.name)}">
-    <div class="thumb${(opt.resume || m.last) ? ' has-pbar' : ''}">${thumbHTML(w)}${badge}${durBadge(w, opt.resume ? target : null)}${nx ? `<span class="b-next" title="다음 회차가 있습니다">NEXT${ICON.next}</span>` : ''}<span class="b-cnt" title="이 작품의 영상 ${w.eps.length}편">${ICON.eps}${opt.resume && w.eps.length > 1 ? `${esc(epLabel(target))}<span class="of">/ ${w.eps.length}편</span>` : epTotal(w)}</span>${(opt.resume || m.last) ? `<span class="pbar"><i style="width:${Math.max(ppct, 3)}%"></i></span>` : ''}</div></a>
+    <div class="thumb${(opt.resume || m.last) ? ' has-pbar' : ''}">${thumbHTML(w)}${badge}${durBadge(w, opt.resume ? target : null)}${nx ? `<span class="b-next" title="다음 회차가 있습니다">NEXT${ICON.next}</span>` : ''}<span class="b-cnt" title="이 작품의 영상 ${w.eps.length}편"><i class="ic ic-eps"></i>${opt.resume && w.eps.length > 1 ? `${esc(epLabel(target))}<span class="of">/ ${w.eps.length}편</span>` : epTotal(w)}</span>${(opt.resume || m.last) ? `<span class="pbar"><i style="width:${Math.max(ppct, 3)}%"></i></span>` : ''}</div></a>
     <a href="#work/${enc(w.key)}" class="t">${esc(w.name)}</a>
     <div class="m">${opt.sub ? esc(opt.sub) : `${epTotal(w)} · ${esc(w.genres[0])} · ${esc(w.narr)} · ${ago(w.upd)}`}</div>
     ${opt.remove ? `<button class="x" data-dismiss="${esc(w.key)}" aria-label="이어보기에서 빼기">${ICON.x}</button>` : ''}
   </div>`;
 }
 let railN = 0;
+// 긴 목록은 48개씩 나눠 그린다(장르 '전체' ~2,000개를 한 번에 그리면 화면이 수 초 멈춤). 끝에 다가가면 다음 묶음을 붙인다.
+const CHUNK = 48;
+let MORE = {}, moreN = 0, moreIO = null;
+function chunked(list, render, cls = 'grid') {
+  const id = 'mr' + (++moreN);
+  MORE[id] = { list, render, n:Math.min(CHUNK, list.length) };
+  return `<div class="${cls}" id="${id}">${list.slice(0, CHUNK).map(render).join('')}</div>${list.length > CHUNK ? `<div class="more" data-more="${id}"><button class="btn">더 보기 <span class="muted">${CHUNK.toLocaleString()} / ${list.length.toLocaleString()}</span></button></div>` : ''}`;
+}
+function stepMore(id) {
+  const s = MORE[id], box = document.getElementById(id), m = document.querySelector(`[data-more="${id}"]`);
+  if (!s || !box || !m) return false;
+  const next = s.list.slice(s.n, s.n + CHUNK);
+  box.insertAdjacentHTML('beforeend', next.map(s.render).join(''));
+  s.n += next.length;
+  if (s.n >= s.list.length) { moreIO?.unobserve(m); m.remove(); return false; }
+  m.querySelector('span').textContent = `${s.n.toLocaleString()} / ${s.list.length.toLocaleString()}`;
+  return true;
+}
+const nearEnd = m => m.isConnected && m.getBoundingClientRect().top < innerHeight + 900;
+function bindMore() {
+  moreIO?.disconnect(); moreIO = null;
+  for (const id of Object.keys(MORE)) if (!document.getElementById(id)) delete MORE[id];
+  const els = $$('[data-more]'); if (!els.length) return;
+  const grow = m => { if (stepMore(m.dataset.more) && nearEnd(m)) requestAnimationFrame(() => nearEnd(m) && grow(m)); };
+  if ('IntersectionObserver' in window) moreIO = new IntersectionObserver(ents => ents.forEach(en => en.isIntersecting && grow(en.target)), { rootMargin:'0px 0px 900px 0px' });
+  els.forEach(m => { moreIO?.observe(m); m.querySelector('button').onclick = () => grow(m); });
+}
+// 뒤로 돌아온 화면: 보던 자리까지 목록을 미리 붙여 둔다
+function growTo(y) {
+  for (const id of Object.keys(MORE)) {
+    let guard = 200;
+    while (guard-- > 0 && document.documentElement.scrollHeight < y + innerHeight + 200 && stepMore(id));
+  }
+}
 function rail(title, list, opt = {}) {
   if (!list.length) return '';
   const id = 'r' + (++railN);
@@ -654,10 +696,10 @@ function viewGenre(g) {
   const count = {}; vis.forEach(w => w.genres.forEach(x => count[x] = (count[x] || 0) + 1));
   const all = Object.keys(count).sort((a, b) => count[b] - count[a]);
   const list = applyG(g ? vis.filter(w => w.genres.includes(g)) : vis);
-  $('#app').innerHTML = `<div class="page-h"><h1>${g ? esc(g) : '장르'}</h1>
+  $('#app').innerHTML = `<div class="page-h"><h1>${g ? esc(g) : '장르'}<span class="muted" style="font-size:17px;font-weight:500;margin-left:8px">(${list.length.toLocaleString()})</span></h1>
     <div class="chips scroll"><a class="chip ${!g ? 'on' : ''}" href="#genre">전체</a>${all.map(x => `<a class="chip ${g === x ? 'on' : ''}" href="#genre/${enc(x)}">${esc(x)} <span class="muted">${count[x]}</span></a>`).join('')}</div>
     ${filterBar()}</div>
-    ${list.length ? `<div class="grid">${list.map(w => card(w)).join('')}</div>` : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}`;
+    ${list.length ? chunked(list, w => card(w)) : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}`;
   bindG();
 }
 /* ================= 채널 ================= */
@@ -674,7 +716,7 @@ function channelsOf(vis) {
   return Object.values(m);
 }
 function chAvatar(c) {
-  return `<span class="ch-av" style="--h:${hash(c.id) % 360}">${esc((c.t || '?').trim().charAt(0))}${c.th && !CAT.demo ? `<img loading="lazy" src="${esc(c.th)}" alt="" onerror="this.remove()">` : ''}</span>`;
+  return `<span class="ch-av" style="--h:${hash(c.id) % 360}">${esc((c.t || '?').trim().charAt(0))}${c.th && !CAT.demo ? `<img loading="lazy" decoding="async" src="${esc(c.th)}" alt="" onerror="this.remove()">` : ''}</span>`;
 }
 // 작품의 '가장 많이 본 회차' YouTube 조회수(원래 숫자 그대로, 정렬용)
 const topView = w => Math.max(0, ...w.eps.map(e => e.vw || 0));
@@ -738,10 +780,10 @@ function viewChannel(cid) {
         <div class="bars" id="ch-bars">${chBars(all, mk)}</div></section>` : ''}
       <section class="rail"><div class="rail-h"><div><h2>전체 채널<span class="cnt">(${all.length})</span></h2></div></div>
       <div class="chips scroll" style="margin-bottom:12px"><button class="chip ${sort === 'upd' ? 'on' : ''}" data-chsort="upd">최근 업데이트순</button><button class="chip ${sort === 'works' ? 'on' : ''}" data-chsort="works">작품 많은 순</button><button class="chip ${sort === 'eps' ? 'on' : ''}" data-chsort="eps">회차 많은 순</button><button class="chip ${sort === 'name' ? 'on' : ''}" data-chsort="name">이름순</button></div>
-      ${chs.length ? `<div class="ch-grid">${chs.map(c => `<a class="ch-card" href="#channel/${enc(c.id)}">${chAvatar(c)}<span style="min-width:0;display:flex;flex-direction:column;gap:2px">
+      ${chs.length ? chunked(chs, c => `<a class="ch-card" href="#channel/${enc(c.id)}">${chAvatar(c)}<span style="min-width:0;display:flex;flex-direction:column;gap:2px">
         <span class="nm">${esc(c.t)}</span><span class="st">작품 <b style="color:var(--ink)">${c.works.length}</b> · 회차 ${c.eps} · ${ago(c.upd)} 업데이트</span>
         <span class="ws">${c.works.slice().sort((a, b) => b.upd - a.upd).slice(0, 3).map(w => esc(w.name)).join(' · ')}</span>
-        <span class="share" title="작품 수(가장 많은 채널 대비)"><i style="width:${Math.max(c.works.length / maxW * 100, 1)}%"></i></span></span></a>`).join('')}</div>`
+        <span class="share" title="작품 수(가장 많은 채널 대비)"><i style="width:${Math.max(c.works.length / maxW * 100, 1)}%"></i></span></span></a>`, 'ch-grid')
         : '<div class="empty">아직 정리된 채널이 없습니다.</div>'}</section>`;
     $$('[data-chsort]').forEach(b => b.onclick = () => { U.prefs.chSort3 = b.dataset.chsort; saveU('prefs'); route(); });
     $$('[data-chmetric]').forEach(b => b.onclick = () => {
@@ -772,7 +814,7 @@ function viewChannel(cid) {
       <div class="bars">${epBars(c.works)}</div></section>` : ''}
     <section class="rail"><div class="rail-h"><div><h2>전체 작품<span class="cnt">(${c.works.length})</span></h2></div></div>
     <div style="margin-bottom:12px">${filterBar()}</div>
-    ${list.length ? `<div class="grid">${list.map(w => card(w)).join('')}</div>` : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}</section>`;
+    ${list.length ? chunked(list, w => card(w)) : '<div class="empty">조건에 맞는 작품이 없습니다.</div>'}</section>`;
   bindG(); bindRails();
 }
 function viewNew() {
@@ -781,7 +823,7 @@ function viewNew() {
   const week = base.filter(w => Date.now() - w.upd < 7 * DAY && !newEps(w).length).sort((a, b) => b.upd - a.upd);
   railN = 0;
   $('#app').innerHTML = `<div class="page-h"><h1>오늘 업데이트</h1><div class="muted small">최근 24시간 안에 새 회차가 올라온 작품 ${list.length}개 · ${ago(Date.parse(CAT.generatedAt))} 자동 업데이트</div></div>
-    ${list.length ? `<div class="grid">${list.map(w => card(w, { sub:`${newEps(w).map(epLabel).slice(-3).join(', ')} 업데이트 · ${ago(w.upd)}` })).join('')}</div>` : '<div class="empty">오늘 올라온 새 회차가 아직 없습니다.</div>'}
+    ${list.length ? chunked(list, w => card(w, { sub:`${newEps(w).map(epLabel).slice(-3).join(', ')} 업데이트 · ${ago(w.upd)}` })) : '<div class="empty">오늘 올라온 새 회차가 아직 없습니다.</div>'}
     ${rail('이번 주에 업데이트된 작품', week.slice(0, 30), { total:week.length })}`;
   bindRails();
 }
@@ -815,7 +857,8 @@ function viewSearch(q0) {
       }
       return { w, s };
     }).filter(x => x.s > 0).sort((a, b) => b.s - a.s || b.w.upd - a.w.upd).map(x => x.w);
-    box.innerHTML = `<div class="page-h"><div class="muted small">'${esc(q)}' 검색 결과 ${scored.length}개</div></div>${scored.length ? `<div class="grid">${scored.slice(0, 120).map(w => card(w)).join('')}</div>` : '<div class="empty">찾는 작품이 없습니다. 다른 단어나 초성으로 찾아보세요.</div>'}`;
+    box.innerHTML = `<div class="page-h"><div class="muted small">'${esc(q)}' 검색 결과 ${scored.length.toLocaleString()}개</div></div>${scored.length ? chunked(scored, w => card(w)) : '<div class="empty">찾는 작품이 없습니다. 다른 단어나 초성으로 찾아보세요.</div>'}`;
+    bindMore();
   };
   inp.oninput = () => { clearTimeout(t); t = setTimeout(run, 180); };
   inp.onkeydown = ev => { if (ev.key === 'Enter') { const q = inp.value.trim(); if (q) { U.recentQ = [q, ...U.recentQ.filter(x => x !== q)].slice(0, 10); saveU('recentQ'); } } };
@@ -883,7 +926,7 @@ function epRow(w, e, cur) {
   const isNew = e.p >= Date.now() - 24 * HOUR;
   return `<a class="ep ${cur === e.id ? 'cur' : ''}" href="#play/${enc(e.id)}">
     <span class="no">${e.ep ?? e.i + 1}</span>
-    <span class="thumb">${CAT.demo ? `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(epLabel(e))}</span></span>` : `<span class="ph" style="--h:${hash(w.key) % 360}"></span><img loading="lazy" src="${thumbUrl(e.id)}" alt="" onerror="this.remove()">`}${pct ? `<span class="pbar"><i style="width:${pct}%"></i></span>` : ''}</span>
+    <span class="thumb">${CAT.demo ? `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(epLabel(e))}</span></span>` : `<span class="ph" style="--h:${hash(w.key) % 360}"></span><img loading="lazy" decoding="async" src="${thumbUrl(e.id)}" alt="" onerror="this.remove()">`}${pct ? `<span class="pbar"><i style="width:${pct}%"></i></span>` : ''}</span>
     <span><span class="tt">${isNew ? '<span class="ep-b">NEW</span>' : ''}${esc(e.t)}</span><br><span class="muted small">${fmtDur(e.du)} · ${ago(e.p)} · YouTube 조회수 ${fmtNum(e.vw)}${done ? ' · <span class="done">다 봄</span>' : pct ? ` · ${pct}% 시청` : ''}</span></span>
     <span class="tail muted small">${fmtDur(e.du)}</span></a>`;
 }
@@ -1066,12 +1109,12 @@ function viewLibrary(tab = 'watching') {
   const hist = Object.entries(U.prog).filter(([id]) => VID[id]).sort((a, b) => b[1].at - a[1].at).slice(0, 60);
   const tabs = [['watching', '보는 중', watching.length], ['news', '새 회차', news.length], ['fav', '찜한 작품', favs.length], ['done', '다 본 작품', done.length], ['history', '시청 기록', hist.length], ['settings', '설정', '']];
   let body = '';
-  const grid = (arr, opt) => arr.length ? `<div class="grid">${arr.map(x => card(x.w, opt)).join('')}</div>` : '';
+  const grid = (arr, opt) => arr.length ? chunked(arr, x => card(x.w, opt)) : '';
   if (tab === 'watching') body = grid(watching, { resume:true }) || '<div class="empty">보고 있는 작품이 없습니다.<a class="btn acc" href="#home">작품 둘러보기</a></div>';
-  if (tab === 'news') body = news.length ? `<div class="grid">${news.map(x => card(x.w, { sub:`새 회차 ${x.m.fresh}개 · ${ago(x.w.upd)}` })).join('')}</div>` : '<div class="empty">찜하거나 보던 작품에 새 회차가 올라오면 여기에 모입니다.</div>';
+  if (tab === 'news') body = news.length ? chunked(news, x => card(x.w, { sub:`새 회차 ${x.m.fresh}개 · ${ago(x.w.upd)}` })) : '<div class="empty">찜하거나 보던 작품에 새 회차가 올라오면 여기에 모입니다.</div>';
   if (tab === 'fav') body = grid(favs, {}) || '<div class="empty">찜한 작품이 없습니다. 작품 상세에서 찜하기를 누르면 새 회차 소식을 받을 수 있습니다.</div>';
   if (tab === 'done') body = grid(done, {}) || '<div class="empty">끝까지 본 작품이 아직 없습니다.</div>';
-  if (tab === 'history') body = hist.length ? `<div class="row" style="justify-content:flex-end"><button class="btn sm" id="clear-hist">시청 기록 모두 지우기</button></div><div class="hist">${hist.map(([id, p]) => { const { w, e } = VID[id]; return `<a href="#play/${enc(id)}"><span class="thumb">${CAT.demo ? `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(epLabel(e))}</span></span>` : `<span class="ph" style="--h:${hash(w.key) % 360}"></span><img loading="lazy" src="${thumbUrl(id)}" alt="" onerror="this.remove()">`}<span class="pbar"><i style="width:${p.d ? Math.round(p.t / p.d * 100) : 0}%"></i></span></span><span><strong>${esc(w.name)}</strong> · ${esc(epLabel(e))}<br><span class="muted small">${ago(p.at)} 시청</span></span></a>`; }).join('')}</div>` : '<div class="empty">시청 기록이 없습니다.</div>';
+  if (tab === 'history') body = hist.length ? `<div class="row" style="justify-content:flex-end"><button class="btn sm" id="clear-hist">시청 기록 모두 지우기</button></div><div class="hist">${hist.map(([id, p]) => { const { w, e } = VID[id]; return `<a href="#play/${enc(id)}"><span class="thumb">${CAT.demo ? `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(epLabel(e))}</span></span>` : `<span class="ph" style="--h:${hash(w.key) % 360}"></span><img loading="lazy" decoding="async" src="${thumbUrl(id)}" alt="" onerror="this.remove()">`}<span class="pbar"><i style="width:${p.d ? Math.round(p.t / p.d * 100) : 0}%"></i></span></span><span><strong>${esc(w.name)}</strong> · ${esc(epLabel(e))}<br><span class="muted small">${ago(p.at)} 시청</span></span></a>`; }).join('')}</div>` : '<div class="empty">시청 기록이 없습니다.</div>';
   if (tab === 'settings') body = `<div class="empty" style="text-align:left;align-items:flex-start">
     <strong>내 기록 옮기기</strong><span class="small">시청 기록과 찜은 이 기기의 브라우저에 저장됩니다. 다른 기기로 옮기려면 백업 파일을 내보내 가져오세요.</span>
     <div class="row"><button class="btn" id="exp">백업 내보내기</button><label class="btn" for="imp">백업 가져오기</label><input id="imp" type="file" accept="application/json" hidden></div>
@@ -1085,7 +1128,10 @@ function viewLibrary(tab = 'watching') {
   };
   const im = $('#imp'); if (im) im.onchange = async ev => {
     try { const d = JSON.parse(await ev.target.files[0].text()); if (d.app !== 'fantasy-shelf') throw 0;
-      Object.assign(U.prog, d.prog || {}); Object.assign(U.fav, d.fav || {}); U.hidden = [...new Set([...U.hidden, ...(d.hidden || [])])];
+      const okKey = k => typeof k === 'string' && /^[\w-]{6,20}$/.test(k), num = v => typeof v === 'number' && isFinite(v);
+      for (const [k, v] of Object.entries(d.prog || {})) if (okKey(k) && v && num(v.t) && num(v.d) && num(v.at)) U.prog[k] = { t:v.t, d:v.d, at:v.at };
+      for (const [k, v] of Object.entries(d.fav || {})) if (typeof k === 'string' && k.length < 300 && k !== '__proto__' && num(v)) U.fav[k] = v;
+      U.hidden = [...new Set([...U.hidden, ...(Array.isArray(d.hidden) ? d.hidden.filter(x => typeof x === 'string' && x.length < 300) : [])])];
       saveU('prog'); saveU('fav'); saveU('hidden'); prepare(CAT); toast('백업을 가져왔습니다.'); route(); }
     catch (e) { toast('Mirago 백업 파일이 아닙니다.'); }
   };
@@ -1172,6 +1218,7 @@ function restoreScroll() {
   if (!st || st.y == null) { window.scrollTo(0, 0); return; }
   restoring = true;
   const apply = () => {
+    growTo(st.y);
     for (const [id, x] of Object.entries(st.rx || {})) { const r = document.getElementById(id); if (r) r.scrollLeft = x; }
     window.scrollTo(0, st.y);
   };
@@ -1188,6 +1235,7 @@ function route() {
   if (view !== 'play') { stopPlayer(); exitFs(); if (document.body.classList.contains('listen')) setListen(false); }
   else stopPlayer();
   clearInterval(heroT);
+  MORE = {};
   const navKey = view === 'work' || view === 'play' ? '' : view;
   $$('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === navKey));
   if (view === 'work') viewWork(arg);
@@ -1198,6 +1246,7 @@ function route() {
   else if (view === 'search') viewSearch(arg);
   else if (view === 'library') viewLibrary(arg || 'watching');
   else viewHome();
+  bindMore();
   if (view !== 'play') restoreScroll();  // 뒤로 온 화면은 보던 자리로, 새 화면은 맨 위로
   updateBell();
 }
@@ -1255,12 +1304,34 @@ const STAT = {
   },
 };
 
+// 네트워크가 1.2초 안에 오면 그것을 쓰고, 늦으면 지난번 받아 둔 목록(서비스 워커 보관본)으로 먼저 연다.
+// 새 목록이 도착하면 데이터를 바꾸고, 화면 맨 위를 보고 있을 때만 다시 그린다(보던 자리가 튀지 않게).
+async function loadCatalog() {
+  const net = fetch('catalog.json', { cache:'no-cache' }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  let hit = null;
+  try { if ('caches' in window) hit = await caches.match('catalog.json', { ignoreSearch:true }); } catch (e) {}
+  if (!hit) return { cat:await net };
+  const fast = await Promise.race([net.catch(() => null), new Promise(r => setTimeout(() => r(null), 1200))]);
+  if (fast) return { cat:fast };
+  try { return { cat:await hit.json(), later:net }; } catch (e) { return { cat:await net }; }
+}
+function applyLater(later) {
+  later.then(cat => {
+    if (!cat || !cat.works || cat.generatedAt === CAT.generatedAt) return;
+    prepare(cat); footer();
+    const view = (location.hash.slice(1) || 'home').split('/')[0];
+    if (view === 'play') return;  // 보는 중에는 조용히 데이터만 바꾼다(다음 화면부터 반영)
+    if (window.scrollY < 120 && !document.querySelector('.agree')) route();
+    else toast('새 회차 목록을 받았습니다. 다른 화면으로 가면 반영됩니다.');
+  }).catch(() => {});
+}
 (async function init() {
   skeleton();
+  let later = null;
   try {
-    const r = await fetch('catalog.json', { cache:'no-cache' });
-    if (!r.ok) throw new Error(r.status);
-    prepare(await r.json());
+    const got = await loadCatalog();
+    if (!got.cat || !Array.isArray(got.cat.works)) throw new Error('bad catalog');
+    prepare(got.cat); later = got.later || null;
   } catch (e) {
     $('#app').innerHTML = `<div class="empty" style="margin-top:30px"><strong>작품 목록(catalog.json)을 불러오지 못했습니다.</strong>
       <span class="small">파일을 직접 열면 브라우저가 막습니다. 폴더에서 <code>python -m http.server 8000</code>을 실행한 뒤 <code>http://localhost:8000</code>으로 접속하거나, GitHub Pages 주소로 접속해 주세요.</span></div>`;
@@ -1269,6 +1340,7 @@ const STAT = {
   STAT.visit();
   LS.set('fs2_visit', Date.now());
   footer(); route();
+  if (later) applyLater(later);
 })();
 </script>
 </body>
