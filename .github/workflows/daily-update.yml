@@ -5,13 +5,23 @@
 name: Mirago 자동 업데이트
 
 on:
+  # GitHub 예약 실행은 자주 빠지거나 몇 시간씩 늦다(2026-11-18 실측: 2시간마다 12번 중 4~5번, 05:17 전체가 5시간 반 늦음).
+  # 그래서 주 실행은 사장님 PC의 ARIA가 05:17~21:17(한국 시간) 2시간마다 workflow_dispatch로 요청하고,
+  # 아래 예약은 ARIA가 자는 밤과 ARIA가 못 부른 때를 메우는 예비로 둔다(최근 150분 안에 ARIA 요청이 있었으면 건너뜀).
   schedule:
-    - cron: '17 20 * * *'   # 매일 한국 시간 새벽 5시 17분 (UTC 20:17)
-    - cron: '47 */2 * * *'  # 2시간마다 수시 갱신: 검색 없이 등록 채널의 새 회차만 확인(새 영상 없으면 커밋 없음)
-  workflow_dispatch: {}
+    - cron: '17 20 * * *'   # 매일 한국 시간 새벽 5시 17분 (UTC 20:17) 전체 수집 예비
+    - cron: '47 */2 * * *'  # 2시간마다 수시 갱신 예비: 검색 없이 등록 채널의 새 회차만 확인(새 영상 없으면 커밋 없음)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'full = 전체 수집(같은 태평양 날짜에 이미 했으면 수시 갱신으로 바뀜) · light = 수시 갱신'
+        type: choice
+        options: [full, light]
+        default: full
 
 permissions:
   contents: write
+  actions: read   # 최근 ARIA 요청 실행 확인용
 
 concurrency:
   group: daily-update
@@ -24,12 +34,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
+      - name: 실행 방식 정하기
+        id: mode
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EV: ${{ github.event_name }}
+          SCHED: ${{ github.event.schedule }}
+          IN_MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$EV" = workflow_dispatch ]; then MODE="${IN_MODE:-full}"
+          else
+            if [ "$SCHED" = '17 20 * * *' ]; then MODE=full; else MODE=light; fi
+            since=$(date -u -d '-150 min' +%Y-%m-%dT%H:%M:%SZ)
+            n=$(gh run list -R "$GITHUB_REPOSITORY" -w daily-update.yml -e workflow_dispatch -L 10                  --json createdAt --jq "[.[] | select(.createdAt > \"$since\")] | length" || echo 0)
+            if [ "${n:-0}" -gt 0 ]; then MODE=skip; fi
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "실행 방식: $MODE (이벤트 $EV $SCHED)"
+
       - name: 공개 사이트 저장소 받기
+        if: steps.mode.outputs.mode != 'skip'
         uses: actions/checkout@v4
         with:
           path: site
 
       - name: 비공개 소스 받기
+        if: steps.mode.outputs.mode != 'skip'
         env:
           SRC_KEY: ${{ secrets.SRC_DEPLOY_KEY }}
           SRC_REPO: ${{ vars.SRC_REPO }}
@@ -41,21 +71,25 @@ jobs:
             git clone --quiet --depth 1 "git@github.com:${SRC_REPO}.git" src
 
       - uses: actions/setup-python@v5
+        if: steps.mode.outputs.mode != 'skip'
         with:
           python-version: '3.12'
 
       - name: 분류 규칙·수집기 테스트
+        if: steps.mode.outputs.mode != 'skip'
         working-directory: src
         run: python -m unittest discover tests 2>&1 | tail -3
 
       - name: 유튜브 검색·수집·AI 분류
+        if: steps.mode.outputs.mode != 'skip'
         working-directory: src
         env:
           YT_API_KEY: ${{ secrets.YT_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python collector/collect.py ${{ github.event.schedule == '47 */2 * * *' && '--light' || '' }}
+        run: python collector/collect.py ${{ steps.mode.outputs.mode == 'light' && '--light' || '' }}
 
       - name: 수집 결과를 비공개 저장소에 저장
+        if: steps.mode.outputs.mode != 'skip'
         working-directory: src
         run: |
           python -c "import json,sys; sys.exit('demo catalog' if json.load(open('docs/catalog.json',encoding='utf-8')).get('demo') else 0)"
@@ -66,6 +100,7 @@ jobs:
           git push --quiet
 
       - name: 공개 사이트 갱신 (화면 파일만 — 앱 화면·작품 목록·설치형 앱 파일)
+        if: steps.mode.outputs.mode != 'skip'
         working-directory: site
         run: |
           cp ../src/docs/index.html ../src/docs/catalog.json ../src/docs/manifest.webmanifest ../src/docs/sw.js .
