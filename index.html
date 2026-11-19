@@ -1093,7 +1093,15 @@ window.miragoF11 = () => {
 document.addEventListener('keydown', ev => {
   if (!hasAppBridge()) return;
   if (ev.key === 'F11') { ev.preventDefault(); window.miragoF11(); }
-  else if (ev.key === 'Escape' && portalFs && !document.body.classList.contains('pfs')) appBridge('fs:off');
+  else if (ev.key === 'Escape' && portalFs && !document.fullscreenElement && !document.body.classList.contains('pfs')) appBridge('fs:off');
+});
+// Windows 앱(WebView2 플러그인)은 페이지 전체 화면 알림을 앱에 주지 않는다 → 문서 전체 화면이 켜지고 꺼질 때 사이트가 직접 앱에 알린다.
+// (영상 '전체 화면' 버튼·재생 화면 F11·YouTube 플레이어 자체 전체 화면 버튼 모두 여기로 온다.) 포털 전체 화면이 이미 켜져 있었으면 끌 때 그대로 둔다.
+let vfsOwn = false;
+document.addEventListener('fullscreenchange', () => {
+  if (!hasAppBridge()) return;
+  if (document.fullscreenElement) { if (!portalFs) { vfsOwn = true; appBridge('fs:on'); } }
+  else if (vfsOwn) { vfsOwn = false; appBridge('fs:off'); }
 });
 function initAppFs() {
   const b = $('#appfs'); if (!b || !hasAppBridge()) return;

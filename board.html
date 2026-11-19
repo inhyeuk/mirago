@@ -194,6 +194,14 @@ async function login() {
   }
 }
 $('#gLogin').onclick = login;
+// 앱 전체 화면(F11·Esc): 게시판도 포털 화면과 같이 창 전체 화면으로
+let portalFs = false;
+window.miragoAppFs = on => { portalFs = !!on; };
+document.addEventListener('keydown', ev => {
+  if (appKind === 'web') return;
+  if (ev.key === 'F11') { ev.preventDefault(); appBridge(portalFs ? 'fs:off' : 'fs:on'); }
+  else if (ev.key === 'Escape' && portalFs) appBridge('fs:off');
+});
 $('#gLogout').onclick = async () => { await signOut(auth); msg('로그아웃했습니다.'); };
 
 $('#nick').value = LS.get('mg_nick', '');
