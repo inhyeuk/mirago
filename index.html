@@ -1054,19 +1054,23 @@ function checkFsNext(next, ended) {
   if (left > FS_NEXT_SEC + 5) fsNextOff = false;
   st.classList.toggle('nx', document.body.classList.contains('pfs') && !fsNextOff && left <= FS_NEXT_SEC);
 }
+let vfsOwn = false, portalFs = false;  // 앱 전체 화면 상태: 영상이 켠 것인지, 포털 전체 화면인지
 async function enterFs() {
   document.body.classList.add('pfs');
+  // 앱: Windows WebView2에서는 문서 전체 화면 요청이 거절되므로(fullscreenerror) 앱에 창 전체 화면을 직접 요청한다
+  if (typeof hasAppBridge === 'function' && hasAppBridge() && !portalFs && !vfsOwn) { vfsOwn = true; appBridge('fs:on'); }
   try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen({ navigationUI:'hide' }); } catch (e) {}  // 안 되면 화면 꽉 채우기만
   try { await screen.orientation.lock('landscape'); } catch (e) {}
 }
 function exitFs() {
   if (!document.body.classList.contains('pfs')) return;
   document.body.classList.remove('pfs'); $('#pstage')?.classList.remove('nx');
+  if (vfsOwn) { vfsOwn = false; appBridge('fs:off'); }
   try { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
   try { screen.orientation.unlock(); } catch (e) {}
 }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitFs(); });
-document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && document.body.classList.contains('pfs')) exitFs(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && document.body.classList.contains('pfs')) { exitFs(); ev.stopImmediatePropagation(); } });
 // 앱(PC·안드로이드) 전체 화면 — 앱 1.0.5+가 다리(bridge)를 열어 준다. 창 테두리·작업 표시줄까지 덮는 전체 화면은 앱이 한다.
 // · 재생 화면이면 영상 전체 화면(위 enterFs → 문서 전체 화면 → 앱이 창을 전체 화면으로)
 // · 그 밖의 화면이면 포털 전체 화면(앱에 'fs:on' — 문서는 그대로, 창만 전체 화면)
@@ -1079,7 +1083,6 @@ function appBridge(m) {
   return false;
 }
 const hasAppBridge = () => !!(window.MiragoApp && window.MiragoApp.postMessage) || (APP_BUILD >= 5 && !!window.flutter_inappwebview);
-let portalFs = false;
 window.miragoAppFs = on => {
   portalFs = !!on;
   const b = $('#appfs'); if (b) { b.title = portalFs ? '전체 화면 끝내기 (F11·Esc)' : '전체 화면 (F11)'; b.setAttribute('aria-label', portalFs ? '전체 화면 끝내기' : '전체 화면'); }
@@ -1097,10 +1100,9 @@ document.addEventListener('keydown', ev => {
 });
 // Windows 앱(WebView2 플러그인)은 페이지 전체 화면 알림을 앱에 주지 않는다 → 문서 전체 화면이 켜지고 꺼질 때 사이트가 직접 앱에 알린다.
 // (영상 '전체 화면' 버튼·재생 화면 F11·YouTube 플레이어 자체 전체 화면 버튼 모두 여기로 온다.) 포털 전체 화면이 이미 켜져 있었으면 끌 때 그대로 둔다.
-let vfsOwn = false;
 document.addEventListener('fullscreenchange', () => {
   if (!hasAppBridge()) return;
-  if (document.fullscreenElement) { if (!portalFs) { vfsOwn = true; appBridge('fs:on'); } }
+  if (document.fullscreenElement) { if (!portalFs && !vfsOwn) { vfsOwn = true; appBridge('fs:on'); } }
   else if (vfsOwn) { vfsOwn = false; appBridge('fs:off'); }
 });
 function initAppFs() {
