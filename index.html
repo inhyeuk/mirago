@@ -50,7 +50,11 @@ nav.main a.on{color:var(--ink);font-weight:700}
 .app-dl:hover{color:var(--ink);border-color:var(--muted)}
 @media (max-width:760px){.app-dl{padding:5px 8px}.app-dl span{display:none}}
 @media (max-width:400px){.top-in{gap:8px;padding-left:12px;padding-right:12px}.app-dl{margin-right:0}.icon-btn{width:34px}}
-html.in-app .app-dl:not(.fb-link){display:none}
+html.in-app .app-dl:not(.fb-link):not(.yt-login){display:none}
+.yt-login{color:var(--ink);border-color:#3a4766}.yt-login .s{display:none}
+@media (max-width:760px){.yt-login .s{display:inline}}
+@media (max-width:400px){.app-dl:not(.fb-link):not(.yt-login){display:none}} /* 좁은 폰: 앱 설치는 아래 바닥글 링크로 */
+.yt-login[hidden]{display:none}
 #appfs[hidden]{display:none}
 .icon-btn{position:relative;background:transparent;border:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
 .icon-btn:hover{background:var(--panel-2)}
@@ -342,6 +346,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
     <button class="btn install-btn" id="install" hidden title="PC·휴대폰에 앱으로 설치합니다">앱 설치</button>
     <a class="app-dl" href="app.html" title="PC·안드로이드 앱 설치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>앱 설치</span></a>
     <a class="app-dl fb-link" href="board.html" title="서비스 의견·건의 게시판"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>의견</span></a>
+    <a class="app-dl yt-login" id="ytlogin" href="https://accounts.google.com/ServiceLogin?service=youtube&amp;hl=ko&amp;continue=https%3A%2F%2Fwww.youtube.com%2F" target="_blank" rel="noopener" title="YouTube Premium 회원은 YouTube에 로그인해 두면 Mirago에서도 광고 없이 재생됩니다 (YouTube 계정 혜택)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>YouTube 로그인</span><span class="s">로그인</span></a>
     <button class="icon-btn" id="appfs" hidden aria-label="전체 화면" title="전체 화면 (F11)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
     <a class="icon-btn" href="#search" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
     <a class="icon-btn" href="#library/news" aria-label="새 회차 소식" id="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
@@ -1105,6 +1110,18 @@ document.addEventListener('fullscreenchange', () => {
   if (document.fullscreenElement) { if (!portalFs && !vfsOwn) { vfsOwn = true; appBridge('fs:on'); } }
   else if (vfsOwn) { vfsOwn = false; appBridge('fs:off'); }
 });
+// YouTube 로그인(오른쪽 위): Premium 회원은 YouTube 쪽 혜택으로 광고 없이 재생된다(Mirago는 광고를 건드리지 않음).
+// 웹 = 새 탭에서 YouTube 로그인(같은 브라우저 쿠키를 플레이어가 씀). 앱 1.0.6+ = 앱 안에서 로그인('ytlogin'). 그보다 옛 앱은 숨김(앱 밖 브라우저 로그인은 앱에 안 넘어감).
+function initYtLogin() {
+  const b = $('#ytlogin'); if (!b) return;
+  const inApp = document.documentElement.classList.contains('in-app');
+  if (inApp && APP_BUILD < 6) { b.hidden = true; return; }
+  b.onclick = ev => {
+    if (inApp) { ev.preventDefault(); if (!appBridge('ytlogin')) toast('앱을 최신 판으로 업데이트하면 쓸 수 있습니다'); return; }
+    toast('YouTube에 로그인한 뒤 이 탭으로 돌아와 영상을 다시 열면 적용됩니다');
+  };
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initYtLogin); else initYtLogin();
 function initAppFs() {
   const b = $('#appfs'); if (!b || !hasAppBridge()) return;
   b.hidden = false;
