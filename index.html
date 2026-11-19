@@ -51,6 +51,7 @@ nav.main a.on{color:var(--ink);font-weight:700}
 @media (max-width:760px){.app-dl{padding:5px 8px}.app-dl span{display:none}}
 @media (max-width:400px){.top-in{gap:8px;padding-left:12px;padding-right:12px}.app-dl{margin-right:0}.icon-btn{width:34px}}
 html.in-app .app-dl:not(.fb-link){display:none}
+#appfs[hidden]{display:none}
 .icon-btn{position:relative;background:transparent;border:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
 .icon-btn:hover{background:var(--panel-2)}
 .icon-btn svg{width:22px;height:22px}
@@ -341,6 +342,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
     <button class="btn install-btn" id="install" hidden title="PC·휴대폰에 앱으로 설치합니다">앱 설치</button>
     <a class="app-dl" href="app.html" title="PC·안드로이드 앱 설치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>앱 설치</span></a>
     <a class="app-dl fb-link" href="board.html" title="서비스 의견·건의 게시판"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>의견</span></a>
+    <button class="icon-btn" id="appfs" hidden aria-label="전체 화면" title="전체 화면 (F11)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
     <a class="icon-btn" href="#search" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
     <a class="icon-btn" href="#library/news" aria-label="새 회차 소식" id="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
   </div>
@@ -356,7 +358,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>try{var m=/[?&]app=(windows|android)/.exec(location.search);if(m){sessionStorage.setItem('fs_app','1');sessionStorage.setItem('fs_app_kind',m[1])}if(sessionStorage.getItem('fs_app'))document.documentElement.classList.add('in-app')}catch(e){}</script>
+<script>try{var m=/[?&]app=(windows|android)/.exec(location.search);if(m){sessionStorage.setItem('fs_app','1');sessionStorage.setItem('fs_app_kind',m[1])}var b=/[?&]ab=([0-9]+)/.exec(location.search);if(b)sessionStorage.setItem('fs_app_build',b[1]);if(sessionStorage.getItem('fs_app'))document.documentElement.classList.add('in-app')}catch(e){}</script>
 <script>
 "use strict";
 /* ================= 공통 ================= */
@@ -1065,6 +1067,40 @@ function exitFs() {
 }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitFs(); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && document.body.classList.contains('pfs')) exitFs(); });
+// 앱(PC·안드로이드) 전체 화면 — 앱 1.0.5+가 다리(bridge)를 열어 준다. 창 테두리·작업 표시줄까지 덮는 전체 화면은 앱이 한다.
+// · 재생 화면이면 영상 전체 화면(위 enterFs → 문서 전체 화면 → 앱이 창을 전체 화면으로)
+// · 그 밖의 화면이면 포털 전체 화면(앱에 'fs:on' — 문서는 그대로, 창만 전체 화면)
+const APP_BUILD = (() => { try { return +(sessionStorage.getItem('fs_app_build') || 0); } catch (e) { return 0; } })();
+function appBridge(m) {
+  try {
+    if (window.MiragoApp && window.MiragoApp.postMessage) { window.MiragoApp.postMessage(m); return true; }
+    if (APP_BUILD >= 5 && window.flutter_inappwebview && window.flutter_inappwebview.callHandler) { window.flutter_inappwebview.callHandler('mirago', m); return true; }
+  } catch (e) {}
+  return false;
+}
+const hasAppBridge = () => !!(window.MiragoApp && window.MiragoApp.postMessage) || (APP_BUILD >= 5 && !!window.flutter_inappwebview);
+let portalFs = false;
+window.miragoAppFs = on => {
+  portalFs = !!on;
+  const b = $('#appfs'); if (b) { b.title = portalFs ? '전체 화면 끝내기 (F11·Esc)' : '전체 화면 (F11)'; b.setAttribute('aria-label', portalFs ? '전체 화면 끝내기' : '전체 화면'); }
+};
+const onPlayPage = () => /^#play\//.test(location.hash) && !!$('#pstage');
+window.miragoF11 = () => {
+  if (document.body.classList.contains('pfs')) { exitFs(); return 'video-off'; }
+  if (onPlayPage()) { enterFs(); return 'video'; }
+  appBridge(portalFs ? 'fs:off' : 'fs:on'); return 'portal';
+};
+document.addEventListener('keydown', ev => {
+  if (!hasAppBridge()) return;
+  if (ev.key === 'F11') { ev.preventDefault(); window.miragoF11(); }
+  else if (ev.key === 'Escape' && portalFs && !document.body.classList.contains('pfs')) appBridge('fs:off');
+});
+function initAppFs() {
+  const b = $('#appfs'); if (!b || !hasAppBridge()) return;
+  b.hidden = false;
+  b.onclick = () => appBridge(portalFs ? 'fs:off' : 'fs:on');
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAppFs); else initAppFs();
 function countdown(next) {
   const box = $('#next-up'); if (!box) return;
   box.classList.add('on'); let s = 5; const ring = $('#ring');

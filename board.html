@@ -39,6 +39,11 @@ button.link:hover{color:var(--ink)}
 .hiddenmark{color:var(--warn);font-weight:600}
 .acts{display:flex;gap:2px;justify-content:flex-end}
 .admin{border-color:#5a4a1f}
+.login{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.login b{font-weight:600}
+button.gbtn{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#1f1f1f;border-color:#dadce0;font-weight:600}
+button.gbtn svg{width:18px;height:18px}
+.locked textarea,.locked input.nick,.locked select{opacity:.55}
 .admin h2{font-size:16px;margin:0 0 6px;color:var(--warn)}
 .rules li{margin:2px 0}
 .empty{color:var(--muted);text-align:center;padding:24px 0}
@@ -52,7 +57,10 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <h1>의견 게시판</h1>
   <p class="muted" style="margin:0">Mirago에 대한 의견·건의·오류 제보를 남겨 주세요. 운영자가 읽고 답변을 달아 드립니다.</p>
 
-  <div class="card">
+  <div class="card locked" id="writeCard">
+    <div class="login" id="loginBar"><span class="small" id="loginText">글을 쓰려면 구글 계정으로 로그인해 주세요. 글 읽기는 로그인 없이 됩니다.</span>
+      <span class="row"><button class="gbtn" id="gLogin"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>Google 계정으로 로그인</button>
+      <button class="link" id="gLogout" hidden>로그아웃</button></span></div>
     <div class="row">
       <select id="cat" aria-label="분류">
         <option>의견</option><option>건의</option><option>오류</option><option>칭찬</option><option>기타</option>
@@ -68,7 +76,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <details class="small muted" style="margin-top:6px">
       <summary>게시판 이용 규칙</summary>
       <ul class="rules">
-        <li>로그인 없이 이용합니다. 이 기기에 임의의 게시판 ID가 만들어지며, 같은 기기에서만 내 글을 지울 수 있습니다.</li>
+        <li>글 읽기는 로그인 없이 됩니다. 글쓰기·신고는 구글 계정으로 로그인해야 하며, 같은 계정으로 로그인하면 어느 기기에서든 내 글을 지울 수 있습니다.</li>
+        <li>글에는 닉네임만 보입니다. 구글 계정의 이메일·이름은 게시판에 공개되지 않습니다.</li>
         <li>스팸·광고, 욕설·비방, 개인정보 노출, 불법 정보, 저작권 침해 영상 홍보 글은 운영자가 예고 없이 숨기거나 지웁니다.</li>
         <li>문제가 있는 글은 '신고'로 알려 주세요. 권리 침해 신고는 <a href="terms.html">이용약관</a> 제4조를 따릅니다.</li>
         <li>글은 1분에 한 번 쓸 수 있습니다. 저장 정보는 <a href="privacy.html">개인정보 처리방침</a>에 안내되어 있습니다.</li>
@@ -98,7 +107,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithCredential, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore, collection, doc, query, where, orderBy, limit, startAfter, getDocs, getDoc, writeBatch,
          addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, increment } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -115,8 +124,11 @@ const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSO
              set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const appKind = (() => { try { return sessionStorage.getItem('fs_app_kind') || (/[?&]app=windows/.test(location.search) ? 'windows' : /[?&]app=android/.test(location.search) ? 'android' : 'web'); } catch (e) { return 'web'; } })();
+const appBuild = (() => { try { return +(sessionStorage.getItem('fs_app_build') || 0); } catch (e) { return 0; } })();
 const PAGE = 20;
-let uid = null, isAdmin = false, lastDoc = null;
+// 운영자(사장님) 구글 계정 = 이메일의 SHA-256 — 공개 화면에 이메일 원문을 두지 않으려고. 실제 권한은 Firestore 규칙이 이메일로 확인한다
+const OWNER_SHA = '46bbdc3ed6ed745d389272fd38b2f3193127df6fe5a2eeafe7b7541889d7d4b5';
+let uid = null, isAdmin = false, isGoogle = false, lastDoc = null;
 
 const msg = (t, cls = '') => { const m = $('#msg'); m.textContent = t; m.className = 'msg ' + cls; };
 const fmt = ts => ts?.toDate ? ts.toDate().toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }) : '방금';
@@ -130,15 +142,58 @@ function ask(html, okText = '확인') {
   });
 }
 
-const ready = new Promise(res => onAuthStateChanged(auth, async u => {
-  if (!u) { try { await signInAnonymously(auth); } catch (e) { msg('게시판 서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.', 'err'); } return; }
-  uid = u.uid;
-  $('#me').textContent = '내 게시판 ID ' + uid.slice(0, 6);
-  $('#me').title = uid;
-  try { const a = await getDoc(doc(db, 'config', 'admins')); isAdmin = a.exists() && (a.data().uids || []).includes(uid); } catch (e) {}
+async function sha256(t) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+const maskMail = m => { const [a, d] = String(m || '').split('@'); return d ? `${a.slice(0, 2)}${'•'.repeat(Math.max(1, a.length - 2))}@${d}` : '구글 계정'; };
+let firstAuth = true, readyRes;
+const ready = new Promise(res => { readyRes = res; });
+onAuthStateChanged(auth, async u => {
+  uid = u ? u.uid : null;
+  isGoogle = !!u && u.providerData.some(p => p.providerId === 'google.com');
+  isAdmin = false;
+  if (u && isGoogle && u.emailVerified && await sha256(String(u.email).toLowerCase()) === OWNER_SHA) isAdmin = true;
+  if (u && !isAdmin) { try { const a = await getDoc(doc(db, 'config', 'admins')); isAdmin = a.exists() && (a.data().uids || []).includes(uid); } catch (e) {} }
   $('#admin').hidden = !isAdmin;
-  res();
-}));
+  $('#me').textContent = isGoogle ? '내 게시판 ID ' + uid.slice(0, 6) : ''; $('#me').title = isGoogle ? uid : '';
+  $('#loginText').innerHTML = isGoogle ? `<b>${esc(maskMail(u.email))}</b>(으)로 로그인했습니다.${isAdmin ? ' · 운영자' : ''}` : '글을 쓰려면 구글 계정으로 로그인해 주세요. 글 읽기는 로그인 없이 됩니다.';
+  $('#gLogin').hidden = isGoogle; $('#gLogout').hidden = !isGoogle;
+  $('#writeCard').classList.toggle('locked', !isGoogle);
+  $('#send').textContent = isGoogle ? '등록' : '로그인하고 등록';
+  readyRes();
+  if (!firstAuth) load(true);
+  firstAuth = false;
+});
+
+// 앱(PC·안드로이드) 안에서는 구글이 로그인 창을 막아서, 기본 브라우저에서 로그인한 뒤 결과(일회용 구글 토큰)를 앱이 받아 여기로 넘긴다
+window.miragoAppLogin = async idToken => {
+  try { await signInWithCredential(auth, GoogleAuthProvider.credential(idToken)); msg('로그인했습니다.', 'ok'); }
+  catch (e) { msg('로그인하지 못했습니다. 다시 시도해 주세요.', 'err'); }
+};
+window.miragoAppLoginFailed = () => msg('로그인을 마치지 못했습니다. 다시 시도해 주세요.', 'err');
+function appBridge(m) {
+  try {
+    if (window.MiragoApp && window.MiragoApp.postMessage) { window.MiragoApp.postMessage(m); return true; }
+    if (appBuild >= 5 && window.flutter_inappwebview && window.flutter_inappwebview.callHandler) { window.flutter_inappwebview.callHandler('mirago', m); return true; }
+  } catch (e) {}
+  return false;
+}
+async function login() {
+  if (appKind !== 'web') {
+    if (appBridge('login')) { msg('기본 브라우저에서 구글 로그인을 마친 뒤 앱으로 돌아와 주세요.'); return; }
+    msg('앱에서 로그인하려면 앱을 새 판으로 업데이트해 주세요(앱 설치 페이지).', 'err'); return;
+  }
+  const pv = new GoogleAuthProvider(); pv.setCustomParameters({ prompt: 'select_account' });
+  try { await signInWithPopup(auth, pv); }
+  catch (e) {
+    const c = String(e.code || '');
+    if (c.includes('popup-closed') || c.includes('cancelled-popup')) return;
+    msg(c.includes('popup-blocked') ? '로그인 창이 막혔습니다. 브라우저의 팝업 허용 후 다시 눌러 주세요.' : '로그인하지 못했습니다: ' + (c || e.message), 'err');
+  }
+}
+$('#gLogin').onclick = login;
+$('#gLogout').onclick = async () => { await signOut(auth); msg('로그아웃했습니다.'); };
 
 $('#nick').value = LS.get('mg_nick', '');
 $('#body').oninput = () => { $('#cnt').textContent = $('#body').value.length; };
@@ -150,6 +205,7 @@ $('#send').onclick = async () => {
   if (NICK_BAD.test(nick.replace(/ /g, ''))) return msg('운영자로 오해될 수 있는 닉네임은 쓸 수 없습니다.', 'err');
   if (body.length < 5) return msg('내용을 5자 이상 적어 주세요.', 'err');
   if (body.length > 1000) return msg('내용은 1,000자까지 쓸 수 있습니다.', 'err');
+  if (!isGoogle) { msg('글을 쓰려면 먼저 구글 계정으로 로그인해 주세요.', 'err'); return login(); }
   $('#send').disabled = true; msg('등록하는 중…');
   try {
     await ready;
@@ -175,7 +231,7 @@ function postHtml(id, p) {
     <div class="body">${esc(p.body)}</div>
     ${p.reply ? `<div class="reply"><b>운영자 답변 · ${fmt(p.replyAt)}</b>${esc(p.reply)}</div>` : ''}
     <div class="acts">
-      ${mine || isAdmin ? '<button class="link" data-act="del">삭제</button>' : ''}
+      ${(mine && isGoogle) || isAdmin ? '<button class="link" data-act="del">삭제</button>' : ''}
       ${!mine ? '<button class="link" data-act="report">신고</button>' : ''}
       ${isAdmin ? `<button class="link" data-act="reply">${p.reply ? '답변 고치기' : '답변'}</button><button class="link" data-act="hide">${p.hidden ? '다시 보이기' : '숨기기'}</button>` : ''}
     </div></div>`;
@@ -212,6 +268,7 @@ $('#list').onclick = async e => {
       if (!await ask('<b>이 글을 지울까요?</b><p class="muted small">지운 글은 되돌릴 수 없습니다.</p>', '삭제')) return;
       await deleteDoc(doc(db, 'posts', id)); el.remove();
     } else if (act === 'report') {
+      if (!isGoogle) { msg('신고하려면 먼저 구글 계정으로 로그인해 주세요.', 'err'); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
       const d = await ask(`<b>신고 사유를 골라 주세요</b><p>${REASONS.map((r, i) => `<label style="display:block"><input type="radio" name="rs" value="${r}" ${i ? '' : 'checked'}> ${r}</label>`).join('')}</p>`, '신고');
       if (!d) return;
       const b = writeBatch(db);
@@ -246,7 +303,7 @@ $('#reports').onclick = async e => {
   try { await deleteDoc(doc(db, 'reports', b.dataset.rid)); b.parentElement.remove(); } catch (err) { alert('처리하지 못했습니다.'); }
 };
 $('#addAdmin').onclick = async () => {
-  const d = await ask('<b>운영자 기기 추가</b><p class="muted small">추가할 기기에서 이 게시판을 열고, 오른쪽 위 \'내 게시판 ID\'에 마우스를 올리거나 길게 눌러 나오는 전체 ID를 적어 주세요.</p><input id="na" style="width:100%" placeholder="게시판 ID 전체">', '추가');
+  const d = await ask('<b>운영자 기기 추가</b><p class="muted small">추가할 사람이 구글 계정으로 로그인한 뒤, 오른쪽 위 \'내 게시판 ID\'에 마우스를 올리거나 길게 눌러 나오는 전체 ID를 적어 주세요.</p><input id="na" style="width:100%" placeholder="게시판 ID 전체">', '추가');
   if (!d) return;
   const id = d.querySelector('#na').value.trim();
   if (!/^[A-Za-z0-9]{20,40}$/.test(id)) return alert('ID 형식이 맞지 않습니다.');
