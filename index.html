@@ -374,8 +374,43 @@ const enc = encodeURIComponent;
 const HOUR = 3600e3, DAY = 864e5;
 const LS = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} if (BK_KEYS.includes(k)) bkSoon(); }
 };
+// 앱(1.0.9+) 기록 백업: 이어보기·찜 등은 웹 저장소(localStorage)에만 있어 앱 업데이트·웹 저장 폴더 문제로 통째로 사라진 적이 있다(2026-11-20).
+// 바뀔 때마다 앱에 사본을 넘기고(앱이 앱 데이터 폴더에 파일로 보관), 앱이 페이지를 열 때 miragoRestore(사본)를 불러
+// 웹 저장소에 없는(비어 있는) 항목만 되살린다. 백업은 되살리기 확인이 끝난 뒤에만 보낸다(빈 저장소가 좋은 사본을 덮지 않게).
+const BK_KEYS = ['fs2_prog', 'fs2_fav', 'fs2_dismiss', 'fs2_hidden', 'fs2_recentq', 'fs2_prefs', 'fs3_agree'];
+let bkReady = false, bkT;
+function bkNow() {
+  if (!bkReady) return;
+  const ls = {};
+  try { for (const k of BK_KEYS) { const v = localStorage.getItem(k); if (v != null) ls[k] = v; } } catch (e) { return; }
+  appBridge('backup:' + JSON.stringify({ v: 1, at: Date.now(), ls }));
+}
+function bkSoon() { if (!bkReady) return; clearTimeout(bkT); bkT = setTimeout(bkNow, 1500); }
+window.miragoRestore = data => {
+  const empty = v => v == null || v === '' || v === '{}' || v === '[]' || v === 'null';
+  let changed = 0;
+  try {
+    if (data && data.v === 1 && data.ls && typeof data.ls === 'object') {
+      for (const k of BK_KEYS) {
+        const raw = data.ls[k];
+        if (typeof raw !== 'string' || empty(raw) || !empty(localStorage.getItem(k))) continue;
+        JSON.parse(raw);  // 깨진 사본은 넣지 않음
+        localStorage.setItem(k, raw); changed++;
+      }
+    }
+  } catch (e) {}
+  bkReady = true;
+  if (changed) {
+    let again = false; try { again = !!sessionStorage.getItem('fs_restored'); sessionStorage.setItem('fs_restored', '1'); } catch (e) {}
+    if (!again) { location.reload(); return 'restored'; }
+  }
+  bkNow();
+  return changed ? 'restored-noreload' : 'ok';
+};
+addEventListener('pagehide', () => { clearTimeout(bkT); bkNow(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(bkT); bkNow(); } });
 let toastT;
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
 const fmtDur = s => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}` : `${m}:${String(x).padStart(2,'0')}`; };
