@@ -95,7 +95,7 @@ jobs:
           python -c "import json,sys; sys.exit('demo catalog' if json.load(open('docs/catalog.json',encoding='utf-8')).get('demo') else 0)"
           git config user.name "mirago-bot"
           git config user.email "mirago-bot@users.noreply.github.com"
-          git add docs/catalog.json data/state.json
+          git add docs/catalog.json data/state.json $(ls docs/intake.json 2>/dev/null)  # intake.json = 운영자 URL 추가 결과
           git diff --cached --quiet || git commit --quiet -m "자동 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
           git push --quiet
 
@@ -104,10 +104,11 @@ jobs:
         working-directory: site
         run: |
           cp ../src/docs/index.html ../src/docs/catalog.json ../src/docs/manifest.webmanifest ../src/docs/sw.js .
+          [ -f ../src/docs/intake.json ] && cp ../src/docs/intake.json . || true
           mkdir -p icons && cp ../src/docs/icons/*.png icons/
           touch .nojekyll
           git config user.name "mirago-bot"
           git config user.email "mirago-bot@users.noreply.github.com"
-          git add index.html catalog.json manifest.webmanifest sw.js icons .nojekyll
+          git add index.html catalog.json manifest.webmanifest sw.js icons .nojekyll $(ls intake.json 2>/dev/null)
           git diff --cached --quiet || git commit --quiet -m "사이트 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
           git push --quiet

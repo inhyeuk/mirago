@@ -48,6 +48,10 @@ button.gbtn svg{width:18px;height:18px}
 .admin h2{font-size:16px;margin:0 0 6px;color:var(--warn)}
 .rules li{margin:2px 0}
 .empty{color:var(--muted);text-align:center;padding:24px 0}
+.inrow{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;border-top:1px solid var(--line);padding:7px 0}
+.inrow .u{word-break:break-all;color:var(--ink)}.inrow .d{color:var(--muted)}
+.st{font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;border:1px solid var(--line);white-space:nowrap;margin-right:6px}
+.st.add{border-color:#2f6b4f;color:#9be3bf}.st.have{border-color:#3b5b8f;color:#a9c6ff}.st.no{border-color:#7a3b3b;color:#ffb3b3}.st.wait,.st.check,.st.err{border-color:#5a4a1f;color:var(--warn)}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;max-width:420px;width:calc(100% - 32px)}
 dialog::backdrop{background:rgba(0,0,0,.6)}
 </style>
@@ -94,6 +98,14 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
       <button id="addAdmin">운영자 기기 추가</button>
     </div>
     <div id="reports" class="small"></div>
+    <h2 style="margin-top:16px">작품 URL 추가</h2>
+    <p class="muted small" style="margin:0">유튜브 영상·채널(@이름)·재생목록 주소를 한 줄에 하나씩 넣어 주세요. 이미 있는 주소는 건너뜁니다.
+      새 주소는 다음 자동 갱신(2시간 안) 때 그 채널까지 관리 범위에 넣고, 영상 태그로 만든 검색어는 다음 전체 수집(매일 새벽 5시)에 먼저 찾아봅니다.
+      운영자가 넣어도 무단 게시 의심·쇼츠·아동용·AI 제작 표시 없는 영상은 들어가지 않습니다.</p>
+    <textarea id="inUrls" maxlength="4000" style="min-height:80px" placeholder="https://www.youtube.com/watch?v=...&#10;https://www.youtube.com/@채널이름"></textarea>
+    <div class="row" style="justify-content:space-between;margin-top:6px"><span class="small" id="inMsg"></span><button class="acc" id="inAdd">추가</button></div>
+    <div class="row" style="justify-content:space-between;margin-top:12px"><b class="small">추가한 주소</b><button class="link" id="inReload">새로고침</button></div>
+    <div id="inList" class="small"></div>
   </div>
 
   <div class="card">
@@ -157,6 +169,7 @@ onAuthStateChanged(auth, async u => {
   if (u && isGoogle && u.emailVerified && await sha256(String(u.email).toLowerCase()) === OWNER_SHA) isAdmin = true;
   if (u && !isAdmin) { try { const a = await getDoc(doc(db, 'config', 'admins')); isAdmin = a.exists() && (a.data().uids || []).includes(uid); } catch (e) {} }
   $('#admin').hidden = !isAdmin;
+  if (isAdmin) loadIntake();
   $('#me').textContent = isGoogle ? '내 게시판 ID ' + uid.slice(0, 6) : ''; $('#me').title = isGoogle ? uid : '';
   $('#loginText').innerHTML = isGoogle ? `<b>${esc(maskMail(u.email))}</b>(으)로 로그인했습니다.${isAdmin ? ' · 운영자' : ''}` : '글을 쓰려면 구글 계정으로 로그인해 주세요. 글 읽기는 로그인 없이 됩니다.';
   $('#gLogin').hidden = isGoogle; $('#gLogout').hidden = !isGoogle;
@@ -317,6 +330,91 @@ $('#addAdmin').onclick = async () => {
   const id = d.querySelector('#na').value.trim();
   if (!/^[A-Za-z0-9]{20,40}$/.test(id)) return alert('ID 형식이 맞지 않습니다.');
   try { await updateDoc(doc(db, 'config', 'admins'), { uids: arrayUnion(id) }); alert('추가했습니다.'); } catch (e) { alert('추가하지 못했습니다: ' + (e.code || e.message)); }
+};
+
+// ---------------- 운영자: 작품 URL 추가(요청함 intake → 수집기가 다음 갱신 때 처리, 결과는 intake.json) ----------------
+const YID = /^[A-Za-z0-9_-]{11}$/, CID = /^UC[A-Za-z0-9_-]{22}$/, PID = /^(PL|UU|OL|FL)[A-Za-z0-9_-]{10,60}$/;
+function parseYt(raw) {
+  let s = raw.trim();
+  if (!s) return null;
+  if (YID.test(s)) return { kind: 'v', ref: s };
+  if (CID.test(s)) return { kind: 'c', ref: s };
+  if (s[0] === '@') s = 'https://www.youtube.com/' + s;
+  if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+  let u; try { u = new URL(s); } catch (e) { return { err: '주소 형식이 아닙니다' }; }
+  const host = u.hostname.toLowerCase().replace(/^(www|m|music)\./, '');
+  const seg = u.pathname.split('/').filter(Boolean), v = u.searchParams.get('v') || '', list = u.searchParams.get('list') || '';
+  if (host === 'youtu.be') return YID.test(seg[0] || '') ? { kind: 'v', ref: seg[0] } : { err: '영상 주소가 아닙니다' };
+  if (host !== 'youtube.com') return { err: '유튜브 주소만 넣을 수 있습니다' };
+  if (seg[0] === 'watch' && YID.test(v)) return { kind: 'v', ref: v };
+  if (['shorts', 'live', 'embed', 'v'].includes(seg[0]) && YID.test(seg[1] || '')) return { kind: 'v', ref: seg[1] };
+  if (seg[0] === 'playlist' && PID.test(list)) return { kind: 'p', ref: list };
+  if (seg[0] === 'channel' && CID.test(seg[1] || '')) return { kind: 'c', ref: seg[1] };
+  if (seg[0] && seg[0][0] === '@') {
+    let h = seg[0].slice(1); try { h = decodeURIComponent(h); } catch (e) {}
+    h = h.toLowerCase();
+    if (/^[^\s/?#@]{3,100}$/.test(h)) return { kind: 'h', ref: h };
+  }
+  if (seg[0] === 'c' || seg[0] === 'user') return { err: '옛 채널 주소입니다. 채널 페이지의 @이름 주소를 넣어 주세요' };
+  return { err: '영상·채널·재생목록 주소가 아닙니다' };
+}
+let catIdx = null;
+async function catalogIndex() {  // 지금 편성된 영상·채널(이미 있는 주소는 요청함에 넣지 않음)
+  if (catIdx) return catIdx;
+  const c = await (await fetch('catalog.json', { cache: 'no-cache' })).json();
+  const vids = new Map();
+  for (const w of c.works || []) for (const e of w.e || []) vids.set(e[0], w.n);
+  return (catIdx = { vids, chans: c.channels || {} });
+}
+const inMsg = (t, cls = '') => { const m = $('#inMsg'); m.textContent = t; m.className = 'small ' + cls; };
+$('#inAdd').onclick = async () => {
+  if (!isAdmin) return;
+  const lines = [...new Set($('#inUrls').value.split(/[\s,]+/).map(s => s.trim()).filter(Boolean))].slice(0, 30);
+  if (!lines.length) return inMsg('주소를 넣어 주세요.', 'err');
+  $('#inAdd').disabled = true; inMsg('확인하는 중…');
+  const done = { add: 0, have: 0, bad: [] }, keep = [];
+  try {
+    const idx = await catalogIndex().catch(() => ({ vids: new Map(), chans: {} }));
+    for (const line of lines) {
+      const p = parseYt(line);
+      if (!p || p.err) { done.bad.push(`${line.slice(0, 60)} — ${p ? p.err : ''}`); keep.push(line); continue; }
+      if (p.kind === 'v' && idx.vids.has(p.ref)) { done.have++; continue; }
+      if (p.kind === 'c' && idx.chans[p.ref]) { done.have++; continue; }
+      const id = p.kind + '_' + p.ref, ref = doc(db, 'intake', id);
+      if ((await getDoc(ref)).exists()) { done.have++; continue; }
+      const b = writeBatch(db);
+      b.set(ref, { kind: p.kind, ref: p.ref, url: line.slice(0, 300), at: serverTimestamp(), uid });
+      try { await b.commit(); done.add++; } catch (e) { done.bad.push(`${line.slice(0, 60)} — 저장 실패(${e.code || e.message})`); keep.push(line); }
+    }
+    $('#inUrls').value = keep.join('\n');
+    inMsg(`새로 추가 ${done.add}건 · 이미 있음 ${done.have}건(건너뜀)` + (done.bad.length ? ` · 못 넣음 ${done.bad.length}건: ${done.bad.join(' / ')}` : ''),
+          done.bad.length ? 'err' : 'ok');
+    loadIntake();
+  } finally { $('#inAdd').disabled = false; }
+};
+const IN_LABEL = { wait: '대기 중', check: '확인 중', add: '추가됨', have: '이미 있음', no: '제외', err: '다시 시도 예정' };
+async function loadIntake() {
+  const box = $('#inList'); box.textContent = '불러오는 중…';
+  try {
+    const [snap, res] = await Promise.all([
+      getDocs(query(collection(db, 'intake'), orderBy('at', 'desc'), limit(100))),
+      fetch('intake.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({}))]);
+    if (snap.empty) { box.innerHTML = '<div class="muted">아직 추가한 주소가 없습니다.</div>'; return; }
+    const st = res.items || {};
+    box.innerHTML = (res.generatedAt ? `<div class="muted">처리 결과 기준: ${esc(new Date(res.generatedAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }))}</div>` : '') +
+      snap.docs.map(d => {
+        const r = d.data(), s = st[d.id] || { s: 'wait', m: '다음 자동 갱신(2시간 안) 때 처리합니다' };
+        const desc = [s.t, s.m, s.q && s.q.length ? '검색어 추가: ' + s.q.join(', ') : ''].filter(Boolean).map(esc).join(' · ');
+        return `<div class="inrow"><div><span class="st ${esc(s.s)}">${esc(IN_LABEL[s.s] || s.s)}</span><a class="u" href="${esc(/^https?:/i.test(r.url) ? r.url : 'https://www.youtube.com/')}" target="_blank" rel="noopener">${esc(r.url)}</a>
+          <div class="d">${fmt(r.at)}${desc ? ' · ' + desc : ''}</div></div>
+          <button class="link" data-iid="${esc(d.id)}" title="목록에서 지웁니다(이미 편성된 영상·채널은 그대로 남습니다)">지우기</button></div>`;
+      }).join('');
+  } catch (e) { box.textContent = '목록을 불러오지 못했습니다: ' + (e.code || e.message); }
+}
+$('#inReload').onclick = () => loadIntake();
+$('#inList').onclick = async e => {
+  const b = e.target.closest('button[data-iid]'); if (!b) return;
+  try { await deleteDoc(doc(db, 'intake', b.dataset.iid)); b.parentElement.remove(); } catch (err) { alert('지우지 못했습니다.'); }
 };
 
 // [운영자 첫 등록 — 부트스트랩 규칙이 배포된 동안만 동작] board.html#claim-admin
