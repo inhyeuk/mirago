@@ -1157,6 +1157,15 @@ function initYtLogin() {
   };
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initYtLogin); else initYtLogin();
+// 앱(1.0.10+)이 YouTube 로그인에서 돌아온 걸 기억했다가 페이지마다 알려 준다 → 버튼에 '로그인됨' 표시(다시 누르면 계정 확인·바꾸기)
+window.miragoYtState = on => {
+  const b = $('#ytlogin'); if (!b) return;
+  const [l, sh] = b.querySelectorAll('span');
+  if (l) l.textContent = on ? 'YouTube 로그인됨 ✓' : 'YouTube 로그인';
+  if (sh) sh.textContent = on ? '로그인됨 ✓' : '로그인';
+  b.title = on ? 'YouTube에 로그인돼 있습니다. Premium 회원이면 광고 없이 재생됩니다(누르면 계정 확인·바꾸기)'
+               : 'YouTube Premium 회원은 YouTube에 로그인해 두면 Mirago에서도 광고 없이 재생됩니다 (YouTube 계정 혜택)';
+};
 function initAppFs() {
   const b = $('#appfs'); if (!b || !hasAppBridge()) return;
   b.hidden = false;
