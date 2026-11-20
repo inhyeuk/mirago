@@ -188,11 +188,13 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
 .tag{display:inline-block;font-size:12px;border-radius:5px;padding:1px 8px;background:rgba(255,255,255,.1);color:#d7dcea}
 /* 작품 상세 */
-.detail{position:relative;margin:0 -24px;overflow:hidden}
-@media (max-width:760px){.detail{margin:0 -16px}}
-.detail .hero-bg::after{background:linear-gradient(0deg,var(--bg) 0%,rgba(10,14,24,.75) 55%,rgba(10,14,24,.45) 100%)}
-.detail-in{position:relative;padding:60px 24px 20px;display:flex;flex-direction:column;gap:12px;max-width:820px}
-@media (max-width:760px){.detail-in{padding:40px 16px 16px}}
+.detail{position:relative;margin:30px 0 0;overflow:hidden;border-radius:14px;min-height:440px;display:flex;align-items:flex-end}
+@media (max-width:760px){.detail{margin-top:20px;border-radius:12px;min-height:380px}}
+/* 메인 큰 배너와 같은 틀(2026-11-20 사장님: 상세 배너 위가 잘림) — 위쪽 여백·둥근 모서리·높이, 포스터 위쪽이 덜 잘리게 */
+.detail .hero-bg .ph,.detail .hero-bg img{object-position:center 22%}
+.detail .hero-bg::after{background:linear-gradient(90deg,rgba(10,14,24,.95) 0%,rgba(10,14,24,.6) 45%,rgba(10,14,24,.1) 100%),linear-gradient(0deg,var(--bg) 0%,rgba(10,14,24,0) 45%)}
+.detail-in{position:relative;padding:40px 24px 30px;display:flex;flex-direction:column;gap:12px;max-width:820px}
+@media (max-width:760px){.detail-in{padding:24px 16px 18px}}
 .detail h1{font-size:34px;font-weight:900}
 @media (max-width:760px){.detail h1{font-size:26px}}
 .kv{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:14px;color:#cfd5e4}
