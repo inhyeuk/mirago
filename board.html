@@ -97,7 +97,6 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <div class="row small">
       <label><input type="checkbox" id="showHidden"> 숨긴 글도 보기</label>
       <button id="loadReports">신고 목록</button>
-      <button id="addAdmin">운영자 기기 추가</button>
     </div>
     <div id="reports" class="small"></div>
     <h2 style="margin-top:16px">작품 URL 추가</h2>
@@ -177,7 +176,7 @@ onAuthStateChanged(auth, async u => {
   isGoogle = !!u && u.providerData.some(p => p.providerId === 'google.com');
   isAdmin = false;
   if (u && isGoogle && u.emailVerified && await sha256(String(u.email).toLowerCase()) === OWNER_SHA) isAdmin = true;
-  if (u && !isAdmin) { try { const a = await getDoc(doc(db, 'config', 'admins')); isAdmin = a.exists() && (a.data().uids || []).includes(uid); } catch (e) {} }
+  // 운영자 = 이메일 확인된 사장님 구글 계정으로 로그인했을 때만(2026-11-21: 기기 ID 운영자 목록 폐지 — 로그인 없이 운영자 도구가 보이던 문제)
   $('#admin').hidden = !isAdmin;
   if (isAdmin) loadIntake();
   $('#me').textContent = isGoogle ? '내 게시판 ID ' + uid.slice(0, 6) : ''; $('#me').title = isGoogle ? uid : '';
@@ -351,13 +350,6 @@ $('#reports').onclick = async e => {
   const b = e.target.closest('button[data-rid]'); if (!b) return;
   try { await deleteDoc(doc(db, 'reports', b.dataset.rid)); b.parentElement.remove(); } catch (err) { alert('처리하지 못했습니다.'); }
 };
-$('#addAdmin').onclick = async () => {
-  const d = await ask('<b>운영자 기기 추가</b><p class="muted small">추가할 사람이 구글 계정으로 로그인한 뒤, 오른쪽 위 \'내 게시판 ID\'에 마우스를 올리거나 길게 눌러 나오는 전체 ID를 적어 주세요.</p><input id="na" style="width:100%" placeholder="게시판 ID 전체">', '추가');
-  if (!d) return;
-  const id = d.querySelector('#na').value.trim();
-  if (!/^[A-Za-z0-9]{20,40}$/.test(id)) return alert('ID 형식이 맞지 않습니다.');
-  try { await updateDoc(doc(db, 'config', 'admins'), { uids: arrayUnion(id) }); alert('추가했습니다.'); } catch (e) { alert('추가하지 못했습니다: ' + (e.code || e.message)); }
-};
 
 // ---------------- 운영자: 작품 URL 추가(요청함 intake → 수집기가 다음 갱신 때 처리, 결과는 intake.json) ----------------
 const YID = /^[A-Za-z0-9_-]{11}$/, CID = /^UC[A-Za-z0-9_-]{22}$/, PID = /^(PL|UU|OL|FL)[A-Za-z0-9_-]{10,60}$/;
@@ -477,14 +469,7 @@ $('#inList').onclick = async e => {
   try { await deleteDoc(doc(db, 'intake', b.dataset.iid)); b.parentElement.remove(); } catch (err) { alert('지우지 못했습니다.'); }
 };
 
-// [운영자 첫 등록 — 부트스트랩 규칙이 배포된 동안만 동작] board.html#claim-admin
-if (location.hash === '#claim-admin') {
-  ready.then(async () => {
-    try { const b = writeBatch(db); b.set(doc(db, 'config', 'admins'), { uids: [uid] }); await b.commit(); isAdmin = true; $('#admin').hidden = false; msg('운영자로 등록했습니다.', 'ok'); }
-    catch (e) { msg('운영자 등록 실패: ' + (e.code || e.message), 'err'); }
-    history.replaceState(null, '', location.pathname); load(true);
-  });
-} else load(true);
+load(true);
 </script>
 </body>
 </html>
