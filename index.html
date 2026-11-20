@@ -1152,13 +1152,42 @@ function initYtLogin() {
   const inApp = document.documentElement.classList.contains('in-app');
   if (inApp && APP_BUILD < 6) { b.hidden = true; return; }
   b.onclick = ev => {
+    // 로그인한 뒤(앱이 알려 준 상태)·웹판: 계정 바꾸기·로그아웃 메뉴(2026-11-20 사장님 요청)
+    if ((inApp && ytOn && APP_BUILD >= 11) || !inApp) { ev.preventDefault(); ytMenu(b, inApp); return; }
     if (inApp) { ev.preventDefault(); if (!appBridge('ytlogin')) toast('앱을 최신 판으로 업데이트하면 쓸 수 있습니다'); return; }
-    toast('YouTube에 로그인한 뒤 이 탭으로 돌아와 영상을 다시 열면 적용됩니다');
   };
+}
+let ytOn = false;
+const YT_IN = 'https://accounts.google.com/ServiceLogin?service=youtube&hl=ko&continue=https%3A%2F%2Fwww.youtube.com%2F';
+const YT_CHOOSE = 'https://accounts.google.com/AccountChooser?service=youtube&hl=ko&continue=https%3A%2F%2Fwww.youtube.com%2F';
+const YT_OUT = 'https://www.youtube.com/logout';
+function ytMenu(b, inApp) {
+  let m = $('#ytmenu');
+  if (m) { m.remove(); return; }
+  m = document.createElement('div'); m.id = 'ytmenu'; m.setAttribute('role', 'menu');
+  const r = b.getBoundingClientRect();
+  m.style.cssText = `position:fixed;top:${Math.round(r.bottom + 6)}px;right:${Math.max(8, Math.round(innerWidth - r.right))}px;z-index:90;` +
+    'background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:200px;box-shadow:0 10px 30px rgba(0,0,0,.45)';
+  const items = inApp
+    ? [['choose', '다른 계정으로 바꾸기'], ['out', 'YouTube 로그아웃']]
+    : [['in', 'YouTube 로그인 (새 탭)'], ['choose', '다른 계정으로 바꾸기 (새 탭)'], ['out', 'YouTube 로그아웃 (새 탭)']];
+  m.innerHTML = items.map(([k, t]) => `<button data-yt="${k}" role="menuitem" style="display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:9px 12px;border-radius:8px;font:inherit;font-size:14px;cursor:pointer">${t}</button>`).join('') +
+    `<div style="color:var(--muted);font-size:12px;padding:4px 12px 6px">${inApp ? 'Premium 회원은 로그인해 두면 광고 없이 재생됩니다' : '이 브라우저의 YouTube 로그인이 Mirago 재생에도 적용됩니다'}</div>`;
+  document.body.appendChild(m);
+  m.querySelectorAll('button').forEach(x => { x.onmouseenter = () => x.style.background = 'var(--panel-2)'; x.onmouseleave = () => x.style.background = 'none'; });
+  m.onclick = e => {
+    const k = e.target.closest('[data-yt]')?.dataset.yt; if (!k) return;
+    m.remove();
+    if (inApp) { appBridge(k === 'out' ? 'ytlogout' : 'ytlogin:choose'); return; }
+    open(k === 'out' ? YT_OUT : k === 'choose' ? YT_CHOOSE : YT_IN, '_blank', 'noopener');
+    toast(k === 'out' ? '로그아웃한 뒤 영상을 다시 열면 적용됩니다' : '로그인한 뒤 이 탭으로 돌아와 영상을 다시 열면 적용됩니다');
+  };
+  setTimeout(() => document.addEventListener('click', function off(e) { if (!m.contains(e.target) && e.target !== b && !b.contains(e.target)) { m.remove(); document.removeEventListener('click', off); } }), 0);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initYtLogin); else initYtLogin();
 // 앱(1.0.10+)이 YouTube 로그인에서 돌아온 걸 기억했다가 페이지마다 알려 준다 → 버튼에 '로그인됨' 표시(다시 누르면 계정 확인·바꾸기)
 window.miragoYtState = on => {
+  ytOn = !!on;
   const b = $('#ytlogin'); if (!b) return;
   const [l, sh] = b.querySelectorAll('span');
   if (l) l.textContent = on ? 'YouTube 로그인됨 ✓' : 'YouTube 로그인';
