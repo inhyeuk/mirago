@@ -356,7 +356,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
     <button class="btn install-btn" id="install" hidden title="PC·휴대폰에 앱으로 설치합니다">앱 설치</button>
     <a class="app-dl" href="app.html" title="PC·안드로이드 앱 설치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>앱 설치</span></a>
     <a class="app-dl fb-link" href="board.html" title="서비스 의견·건의 게시판"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>의견</span></a>
-    <a class="app-dl yt-login" id="ytlogin" href="https://accounts.google.com/ServiceLogin?service=youtube&amp;hl=ko&amp;continue=https%3A%2F%2Fwww.youtube.com%2F" target="_blank" rel="noopener" title="YouTube Premium 회원은 YouTube에 로그인해 두면 Mirago에서도 광고 없이 재생됩니다 (YouTube 계정 혜택)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>YouTube 로그인</span><span class="s">로그인</span></a>
+    <a class="app-dl yt-login" id="ytlogin" href="https://accounts.google.com/ServiceLogin?service=youtube&amp;hl=ko&amp;continue=https%3A%2F%2Fwww.youtube.com%2F" target="_blank" rel="noopener" title="구글 계정으로 로그인 — 의견 게시판도 함께 로그인됩니다"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>로그인</span><span class="s">로그인</span></a>
     <button class="icon-btn" id="appfs" hidden aria-label="전체 화면" title="전체 화면 (F11)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
     <a class="icon-btn" href="#search" aria-label="검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
     <a class="icon-btn" href="#library/news" aria-label="새 회차 소식" id="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
@@ -1173,55 +1173,116 @@ document.addEventListener('fullscreenchange', () => {
   if (document.fullscreenElement) { if (!portalFs && !vfsOwn) { vfsOwn = true; appBridge('fs:on'); } }
   else if (vfsOwn) { vfsOwn = false; appBridge('fs:off'); }
 });
-// YouTube 로그인(오른쪽 위): Premium 회원은 YouTube 쪽 혜택으로 광고 없이 재생된다(Mirago는 광고를 건드리지 않음).
-// 웹 = 새 탭에서 YouTube 로그인(같은 브라우저 쿠키를 플레이어가 씀). 앱 1.0.6+ = 앱 안에서 로그인('ytlogin'). 그보다 옛 앱은 숨김(앱 밖 브라우저 로그인은 앱에 안 넘어감).
+// 로그인(오른쪽 위) = Mirago 계정(구글, Firebase mirago-app) — 의견 게시판(board.html)과 같은 로그인(2026-11-21 사장님: 한 앱인데 따로 로그인은 오류).
+// 같은 사이트 주소라 Firebase가 로그인 상태를 브라우저(앱 웹 화면)에 함께 보관 → 여기서 로그인·로그아웃하면 게시판도 그대로, 반대도 같음.
+// YouTube Premium 혜택(광고 없이 재생)은 YouTube 쪽 로그인이라 메뉴의 'YouTube' 항목으로 따로(Mirago는 광고를 건드리지 않음).
+//  · 웹: 구글 로그인 창(팝업). 같은 브라우저의 YouTube 로그인이 플레이어에 적용된다.
+//  · PC 앱(1.0.12+): 앱 안 YouTube 로그인('ytlogin')을 먼저 → 앱이 로그인됨을 알려 주면 같은 구글 계정으로 Mirago 로그인을 자동으로 마침.
+//  · 안드로이드 앱: 구글이 앱 안 로그인을 막아 기본 브라우저 로그인('login') → 앱이 결과 토큰을 miragoAppLogin으로 넘김.
+const APP_KIND = (() => { try { return sessionStorage.getItem('fs_app_kind') || 'web'; } catch (e) { return 'web'; } })();
+const FB_CFG = { apiKey: 'AIzaSyAlOWhVYU_0BpJqpnGGEa6RVc1KeQ5vJ0U', authDomain: 'mirago-app.firebaseapp.com', projectId: 'mirago-app', appId: '1:259107244535:web:6cda463c1b02048086c6f2' };
+const FB_V = 'https://www.gstatic.com/firebasejs/10.14.1/';
+let fbAuth = null, acct = null, acctReady = false, ytOn = false, pendingFb = false;
+const fbP = (async () => {
+  const [{ initializeApp }, m] = await Promise.all([import(FB_V + 'firebase-app.js'), import(FB_V + 'firebase-auth.js')]);
+  fbAuth = m.getAuth(initializeApp(FB_CFG));
+  m.onAuthStateChanged(fbAuth, u => {
+    acct = u && u.providerData.some(p => p.providerId === 'google.com') ? u : null;
+    acctReady = true; paintLogin();
+  });
+  return m;
+})();
+fbP.catch(() => { acctReady = true; paintLogin(); });
+const maskMail = m => { const [a, d] = String(m || '').split('@'); return d ? `${a.slice(0, 2)}${'•'.repeat(Math.max(1, a.length - 2))}@${d}` : '구글 계정'; };
+const inAppPopup = () => APP_KIND === 'windows' && APP_BUILD >= 12;
+function paintLogin() {
+  const b = $('#ytlogin'); if (!b) return;
+  const [l, sh] = b.querySelectorAll('span');
+  if (l) l.textContent = acct ? '로그인됨 ✓' : '로그인';
+  if (sh) sh.textContent = acct ? '로그인됨 ✓' : '로그인';
+  b.title = acct ? `${maskMail(acct.email)}(으)로 로그인돼 있습니다 — 의견 게시판도 같은 계정입니다(누르면 계정 메뉴)`
+                 : '구글 계정으로 로그인 — 의견 게시판도 함께 로그인됩니다. YouTube Premium 회원은 YouTube에도 로그인해 두면 광고 없이 재생됩니다';
+}
+async function fbLogin(quiet) {
+  const m = await fbP.catch(() => null);
+  if (!m) { if (!quiet) toast('로그인 기능을 불러오지 못했습니다. 잠시 뒤 다시 눌러 주세요'); return false; }
+  if (APP_KIND === 'web' || inAppPopup()) {
+    const pv = new m.GoogleAuthProvider(); if (APP_KIND === 'web') pv.setCustomParameters({ prompt: 'select_account' });
+    try { await m.signInWithPopup(fbAuth, pv); toast('로그인했습니다'); return true; }
+    catch (e) {
+      const c = String(e.code || '');
+      if (quiet || c.includes('popup-closed') || c.includes('cancelled-popup')) return false;
+      if (APP_KIND === 'web') { toast(c.includes('popup-blocked') ? '로그인 창이 막혔습니다. 팝업을 허용한 뒤 다시 눌러 주세요' : '로그인하지 못했습니다'); return false; }
+    }
+  }
+  if (quiet) return false;
+  if (appBridge('login')) { toast('기본 브라우저에서 구글 로그인을 마친 뒤 앱으로 돌아와 주세요'); return true; }
+  toast('앱을 최신 판으로 업데이트하면 로그인할 수 있습니다'); return false;
+}
+// 안드로이드·옛 PC 앱: 기본 브라우저 로그인 결과(일회용 구글 토큰)를 앱이 지금 화면에 넘긴다
+window.miragoAppLogin = async idToken => {
+  try { const m = await fbP; await m.signInWithCredential(fbAuth, m.GoogleAuthProvider.credential(idToken)); toast('로그인했습니다'); }
+  catch (e) { toast('로그인하지 못했습니다. 다시 시도해 주세요'); }
+};
+window.miragoAppLoginFailed = () => toast('로그인을 마치지 못했습니다. 다시 시도해 주세요');
+async function logoutAll(inApp) {
+  try { const m = await fbP; await m.signOut(fbAuth); } catch (e) {}
+  if (inApp && ytOn) appBridge('ytlogout');  // 앱: 같은 '로그인' 버튼으로 한 YouTube 로그인도 함께 끝냄
+  toast('로그아웃했습니다');
+}
 function initYtLogin() {
   const b = $('#ytlogin'); if (!b) return;
   const inApp = document.documentElement.classList.contains('in-app');
-  if (inApp && APP_BUILD < 6) { b.hidden = true; return; }
+  paintLogin();
   b.onclick = ev => {
-    // 로그인한 뒤(앱이 알려 준 상태)·웹판: 계정 바꾸기·로그아웃 메뉴(2026-11-20 사장님 요청)
-    if ((inApp && ytOn && APP_BUILD >= 11) || !inApp) { ev.preventDefault(); ytMenu(b, inApp); return; }
-    if (inApp) { ev.preventDefault(); if (!appBridge('ytlogin')) toast('앱을 최신 판으로 업데이트하면 쓸 수 있습니다'); return; }
+    ev.preventDefault();
+    if (acct) { acctMenu(b, inApp); return; }
+    if (!acctReady) { toast('로그인 상태를 확인하는 중입니다. 잠시 뒤 다시 눌러 주세요'); return; }
+    if (inAppPopup() && !ytOn && appBridge('ytlogin')) { pendingFb = true; return; }  // YouTube(구글) 로그인 → 돌아오면 Mirago 로그인 자동
+    fbLogin(false);
   };
 }
-let ytOn = false;
 const YT_IN = 'https://accounts.google.com/ServiceLogin?service=youtube&hl=ko&continue=https%3A%2F%2Fwww.youtube.com%2F';
 const YT_CHOOSE = 'https://accounts.google.com/AccountChooser?service=youtube&hl=ko&continue=https%3A%2F%2Fwww.youtube.com%2F';
-const YT_OUT = 'https://www.youtube.com/logout';
-function ytMenu(b, inApp) {
+function acctMenu(b, inApp) {
   let m = $('#ytmenu');
   if (m) { m.remove(); return; }
   m = document.createElement('div'); m.id = 'ytmenu'; m.setAttribute('role', 'menu');
   const r = b.getBoundingClientRect();
   m.style.cssText = `position:fixed;top:${Math.round(r.bottom + 6)}px;right:${Math.max(8, Math.round(innerWidth - r.right))}px;z-index:90;` +
-    'background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:200px;box-shadow:0 10px 30px rgba(0,0,0,.45)';
-  const items = inApp
-    ? [['choose', '다른 계정으로 바꾸기'], ['out', 'YouTube 로그아웃']]
-    : [['in', 'YouTube 로그인 (새 탭)'], ['choose', '다른 계정으로 바꾸기 (새 탭)'], ['out', 'YouTube 로그아웃 (새 탭)']];
-  m.innerHTML = items.map(([k, t]) => `<button data-yt="${k}" role="menuitem" style="display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:9px 12px;border-radius:8px;font:inherit;font-size:14px;cursor:pointer">${t}</button>`).join('') +
-    `<div style="color:var(--muted);font-size:12px;padding:4px 12px 6px">${inApp ? 'Premium 회원은 로그인해 두면 광고 없이 재생됩니다' : '이 브라우저의 YouTube 로그인이 Mirago 재생에도 적용됩니다'}</div>`;
+    'background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:220px;box-shadow:0 10px 30px rgba(0,0,0,.45)';
+  const yt = inApp && APP_BUILD >= 6
+    ? (ytOn ? [['ytchoose', 'YouTube 계정 바꾸기']] : [['ytin', 'YouTube에도 로그인 (Premium 광고 없이)']])
+    : inApp ? [] : [['ytin', 'YouTube에도 로그인 (새 탭)'], ['ytchoose', 'YouTube 계정 바꾸기 (새 탭)']];
+  const items = [['board', '의견 게시판'], ...yt, ['out', '로그아웃']];
+  const mail = maskMail(acct && acct.email).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
+  m.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:6px 12px 4px">${mail}</div>` +
+    items.map(([k, t]) => `<button data-yt="${k}" role="menuitem" style="display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:9px 12px;border-radius:8px;font:inherit;font-size:14px;cursor:pointer">${t}</button>`).join('') +
+    `<div style="color:var(--muted);font-size:12px;padding:4px 12px 6px">의견 게시판도 이 계정으로 로그인돼 있습니다.<br>${inApp ? 'Premium 회원은 YouTube에도 로그인해 두면 광고 없이 재생됩니다' : '이 브라우저의 YouTube 로그인이 Mirago 재생에도 적용됩니다'}</div>`;
   document.body.appendChild(m);
   m.querySelectorAll('button').forEach(x => { x.onmouseenter = () => x.style.background = 'var(--panel-2)'; x.onmouseleave = () => x.style.background = 'none'; });
   m.onclick = e => {
     const k = e.target.closest('[data-yt]')?.dataset.yt; if (!k) return;
     m.remove();
-    if (inApp) { appBridge(k === 'out' ? 'ytlogout' : 'ytlogin:choose'); return; }
-    open(k === 'out' ? YT_OUT : k === 'choose' ? YT_CHOOSE : YT_IN, '_blank', 'noopener');
-    toast(k === 'out' ? '로그아웃한 뒤 영상을 다시 열면 적용됩니다' : '로그인한 뒤 이 탭으로 돌아와 영상을 다시 열면 적용됩니다');
+    if (k === 'board') { location.href = 'board.html'; return; }
+    if (k === 'out') { logoutAll(inApp); return; }
+    if (inApp) { appBridge(k === 'ytchoose' ? 'ytlogin:choose' : 'ytlogin'); return; }
+    open(k === 'ytchoose' ? YT_CHOOSE : YT_IN, '_blank', 'noopener');
+    toast('로그인한 뒤 이 탭으로 돌아와 영상을 다시 열면 적용됩니다');
   };
   setTimeout(() => document.addEventListener('click', function off(e) { if (!m.contains(e.target) && e.target !== b && !b.contains(e.target)) { m.remove(); document.removeEventListener('click', off); } }), 0);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initYtLogin); else initYtLogin();
-// 앱(1.0.10+)이 YouTube 로그인에서 돌아온 걸 기억했다가 페이지마다 알려 준다 → 버튼에 '로그인됨' 표시(다시 누르면 계정 확인·바꾸기)
+// 앱(1.0.10+)이 페이지마다 'YouTube 로그인돼 있음'을 알려 준다. PC 앱은 그 구글 계정으로 Mirago 로그인을 조용히 마침(세션당 1번, 방금 누른 로그인이면 바로)
 window.miragoYtState = on => {
   ytOn = !!on;
-  const b = $('#ytlogin'); if (!b) return;
-  const [l, sh] = b.querySelectorAll('span');
-  if (l) l.textContent = on ? 'YouTube 로그인됨 ✓' : 'YouTube 로그인';
-  if (sh) sh.textContent = on ? '로그인됨 ✓' : '로그인';
-  b.title = on ? 'YouTube에 로그인돼 있습니다. Premium 회원이면 광고 없이 재생됩니다(누르면 계정 확인·바꾸기)'
-               : 'YouTube Premium 회원은 YouTube에 로그인해 두면 Mirago에서도 광고 없이 재생됩니다 (YouTube 계정 혜택)';
+  if (!on || !inAppPopup()) return;
+  let first = false;
+  try { first = !sessionStorage.getItem('fs_acct_auto'); sessionStorage.setItem('fs_acct_auto', '1'); } catch (e) {}
+  if (!pendingFb && !first) return;
+  const go = pendingFb; pendingFb = false;
+  fbP.then(() => new Promise(r => { const t = setInterval(() => { if (acctReady) { clearInterval(t); r(); } }, 50); }))
+    .then(() => { if (!acct) fbLogin(!go); });
 };
 function initAppFs() {
   const b = $('#appfs'); if (!b || !hasAppBridge()) return;
