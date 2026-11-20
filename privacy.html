@@ -14,11 +14,12 @@ a{color:#8fb3ff}
 h1{font-size:28px;margin:10px 0 4px}h2{font-size:19px;margin:30px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
 .muted{color:var(--muted)}table{border-collapse:collapse;width:100%;font-size:14.5px}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--panel)}
 .top a{color:var(--muted);text-decoration:none}
+.backbtn{display:inline-flex;align-items:center;gap:4px;height:38px;padding:0 14px 0 9px;border-radius:999px;background:#1a2336;border:1px solid #3a4766;color:#eef1f8!important;font-size:14px;font-weight:700;text-decoration:none!important;white-space:nowrap}.backbtn:hover{background:#26324b;border-color:#9099b2}.backbtn svg{width:20px;height:20px}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="top"><a href="./">← Mirago로 돌아가기</a></div>
+<div class="top"><a class="backbtn" href="./" onclick="if(document.referrer.indexOf(location.origin)===0&&history.length>1){history.back();return false}" title="이전 화면으로" aria-label="이전 화면으로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>이전</a></div>
 <h1>개인정보 처리방침</h1>
 <p class="muted">시행일: 2026년 11월 19일(의견 게시판 구글 로그인 반영) · 적용 대상: Mirago 웹(inhyeuk.github.io/mirago)과 Mirago PC·안드로이드 앱</p>
 
