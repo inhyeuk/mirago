@@ -49,6 +49,7 @@ button.gbtn svg{width:18px;height:18px}
 .rules li{margin:2px 0}
 .empty{color:var(--muted);text-align:center;padding:24px 0}
 .inrow{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;border-top:1px solid var(--line);padding:7px 0}
+#inHistF .link.on{color:var(--ink);font-weight:700;text-decoration:underline}
 .inrow .u{word-break:break-all;color:var(--ink)}.inrow .d{color:var(--muted)}
 .st{font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;border:1px solid var(--line);white-space:nowrap;margin-right:6px}
 .st.add{border-color:#2f6b4f;color:#9be3bf}.st.have{border-color:#3b5b8f;color:#a9c6ff}.st.no{border-color:#7a3b3b;color:#ffb3b3}.st.wait,.st.check,.st.err{border-color:#5a4a1f;color:var(--warn)}
@@ -106,8 +107,15 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
       운영자가 넣어도 무단 게시 의심·쇼츠·아동용·AI 제작 표시 없는 영상은 들어가지 않습니다.</p>
     <textarea id="inUrls" maxlength="4000" style="min-height:80px" placeholder="https://www.youtube.com/watch?v=...&#10;https://www.youtube.com/@채널이름"></textarea>
     <div class="row" style="justify-content:space-between;margin-top:6px"><span class="small" id="inMsg"></span><button class="acc" id="inAdd">추가</button></div>
-    <div class="row" style="justify-content:space-between;margin-top:12px"><b class="small">추가한 주소</b><button class="link" id="inReload">새로고침</button></div>
+    <div class="row" style="justify-content:space-between;margin-top:12px"><b class="small">처리 중인 주소</b>
+      <span class="row" style="gap:10px"><button class="link" id="inHistBtn">이력 보기</button><button class="link" id="inReload">새로고침</button></span></div>
     <div id="inList" class="small"></div>
+    <div id="inHist" class="small" hidden>
+      <div class="row" style="justify-content:space-between;margin-top:12px"><b class="small">처리 이력 <span class="muted" id="inHistN"></span></b>
+        <span class="row" style="gap:4px" id="inHistF"><button class="link on" data-f="">전체</button><button class="link" data-f="add">추가됨</button><button class="link" data-f="have">이미 있음</button><button class="link" data-f="no">제외</button></span></div>
+      <input id="inHistQ" type="search" placeholder="주소·제목·작품명으로 찾기" style="width:100%;margin-top:6px">
+      <div id="inHistList"></div>
+    </div>
   </div>
 
   <div class="card">
@@ -412,24 +420,57 @@ $('#inAdd').onclick = async () => {
   } finally { $('#inAdd').disabled = false; }
 };
 const IN_LABEL = { wait: '대기 중', check: '확인 중', add: '추가됨', have: '이미 있음', no: '제외', err: '다시 시도 예정' };
+const IN_FINAL = new Set(['add', 'have', 'no']);  // 처리 끝 → 목록에서 지우고 이력으로(2026-11-21)
+const IN_URL = { v: 'https://www.youtube.com/watch?v=', c: 'https://www.youtube.com/channel/', h: 'https://www.youtube.com/@', p: 'https://www.youtube.com/playlist?list=' };
+const idUrl = id => { const i = id.indexOf('_'); return (IN_URL[id.slice(0, i)] || 'https://www.youtube.com/') + encodeURIComponent(id.slice(i + 1)); };
+const msDate = s => new Date(s * 1000).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
+let inHist = [], inHistF = '';
+function inRow(st, url, when, desc, btn = '') {
+  return `<div class="inrow"><div><span class="st ${esc(st)}">${esc(IN_LABEL[st] || st)}</span><a class="u" href="${esc(/^https?:/i.test(url) ? url : 'https://www.youtube.com/')}" target="_blank" rel="noopener">${esc(url)}</a>
+    <div class="d">${esc(when)}${desc ? ' · ' + desc : ''}</div></div>${btn}</div>`;
+}
+const inDesc = s => [s.t, s.m, s.q && s.q.length ? '검색어 추가: ' + s.q.join(', ') : ''].filter(Boolean).map(esc).join(' · ');
 async function loadIntake() {
   const box = $('#inList'); box.textContent = '불러오는 중…';
   try {
     const [snap, res] = await Promise.all([
-      getDocs(query(collection(db, 'intake'), orderBy('at', 'desc'), limit(100))),
+      getDocs(query(collection(db, 'intake'), orderBy('at', 'desc'), limit(300))),
       fetch('intake.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({}))]);
-    if (snap.empty) { box.innerHTML = '<div class="muted">아직 추가한 주소가 없습니다.</div>'; return; }
-    const st = res.items || {};
+    const st = res.items || {}, urlOf = {};
+    const pending = [], fin = [];
+    for (const d of snap.docs) { urlOf[d.id] = d.data().url; (IN_FINAL.has((st[d.id] || {}).s) ? fin : pending).push(d); }
+    if (isAdmin && fin.length)  // 처리가 끝난 요청은 요청함에서 지움(결과는 수집기가 이력으로 옮겨 보관)
+      Promise.allSettled(fin.map(d => deleteDoc(doc(db, 'intake', d.id))));
+    // 이력 = 이번에 끝난 요청(intake.json items 중 처리 끝) + 수집기가 보관한 이력
+    const seen = new Set();
+    inHist = [...Object.entries(st).filter(([, s]) => IN_FINAL.has(s.s)).map(([id, s]) => ({ id, ...s })), ...(res.hist || [])]
+      .filter(h => { const k = h.id + ':' + h.at; if (seen.has(k)) return false; seen.add(k); return true; })
+      .map(h => ({ ...h, url: urlOf[h.id] || idUrl(h.id) }))
+      .sort((a, b) => (b.done || b.at || 0) - (a.done || a.at || 0));
+    renderHist();
     box.innerHTML = (res.generatedAt ? `<div class="muted">처리 결과 기준: ${esc(new Date(res.generatedAt).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }))}</div>` : '') +
-      snap.docs.map(d => {
+      (pending.length ? pending.map(d => {
         const r = d.data(), s = st[d.id] || { s: 'wait', m: '다음 자동 갱신(2시간 안) 때 처리합니다' };
-        const desc = [s.t, s.m, s.q && s.q.length ? '검색어 추가: ' + s.q.join(', ') : ''].filter(Boolean).map(esc).join(' · ');
-        return `<div class="inrow"><div><span class="st ${esc(s.s)}">${esc(IN_LABEL[s.s] || s.s)}</span><a class="u" href="${esc(/^https?:/i.test(r.url) ? r.url : 'https://www.youtube.com/')}" target="_blank" rel="noopener">${esc(r.url)}</a>
-          <div class="d">${fmt(r.at)}${desc ? ' · ' + desc : ''}</div></div>
-          <button class="link" data-iid="${esc(d.id)}" title="목록에서 지웁니다(이미 편성된 영상·채널은 그대로 남습니다)">지우기</button></div>`;
-      }).join('');
+        return inRow(s.s, r.url, fmt(r.at), inDesc(s),
+          `<button class="link" data-iid="${esc(d.id)}" title="목록에서 지웁니다(이미 편성된 영상·채널은 그대로 남습니다)">지우기</button>`);
+      }).join('') : `<div class="muted">처리 중인 주소가 없습니다.${inHist.length ? ' 처리가 끝난 주소는 「이력 보기」에 있습니다.' : ''}</div>`);
   } catch (e) { box.textContent = '목록을 불러오지 못했습니다: ' + (e.code || e.message); }
 }
+function renderHist() {
+  const q = ($('#inHistQ').value || '').trim().toLowerCase();
+  const rows = inHist.filter(h => (!inHistF || h.s === inHistF) &&
+    (!q || [h.url, h.t, h.w, h.m].some(x => x && String(x).toLowerCase().includes(q))));
+  $('#inHistN').textContent = `${rows.length}건` + (rows.length !== inHist.length ? ` / 전체 ${inHist.length}건` : '');
+  $('#inHistList').innerHTML = rows.length ? rows.slice(0, 300).map(h =>
+    inRow(h.s, h.url, '요청 ' + msDate(h.at) + (h.done ? ' → 처리 ' + msDate(h.done) : ''), inDesc(h))).join('')
+    : '<div class="muted" style="padding:7px 0">이력이 없습니다.</div>';
+}
+$('#inHistBtn').onclick = () => { const h = $('#inHist'); h.hidden = !h.hidden; $('#inHistBtn').textContent = h.hidden ? '이력 보기' : '이력 닫기'; };
+$('#inHistF').onclick = e => {
+  const b = e.target.closest('button[data-f]'); if (!b) return;
+  inHistF = b.dataset.f; $('#inHistF').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderHist();
+};
+$('#inHistQ').oninput = () => renderHist();
 $('#inReload').onclick = () => loadIntake();
 $('#inList').onclick = async e => {
   const b = e.target.closest('button[data-iid]'); if (!b) return;
