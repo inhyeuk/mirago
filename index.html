@@ -37,7 +37,9 @@ h1,h2,h3{margin:0;line-height:1.3;text-wrap:balance}
 header.top{position:sticky;top:0;z-index:30;background:linear-gradient(var(--bg),rgba(10,14,24,.92));border-bottom:1px solid rgba(39,49,73,.6)}
 .top-in{max-width:1400px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:20px}
 .logo{font-weight:900;font-size:20px;letter-spacing:-.5px;display:flex;align-items:center;gap:8px;white-space:nowrap}
-.back-btn{margin-right:-12px;background:var(--panel)}.back-btn[hidden]{display:none}
+.icon-btn.back-btn{width:auto;height:38px;display:inline-flex;align-items:center;gap:4px;padding:0 14px 0 9px;border-radius:999px;background:var(--panel-2);border:1px solid #3a4766;color:var(--ink);font-size:14px;font-weight:700;margin-right:-6px}
+.icon-btn.back-btn:hover{background:#26324b;border-color:var(--muted)}.back-btn svg{width:20px;height:20px}.back-btn[hidden]{display:none}
+@media (max-width:400px){.icon-btn.back-btn{padding:0 10px 0 6px}.back-btn span{display:none}}
 .install-btn{font-size:13px;padding:6px 12px;white-space:nowrap}
 body.standalone .install-btn,.install-btn[hidden]{display:none}
 .logo b{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;font-size:15px}
@@ -333,7 +335,7 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
 <body>
 <header class="top">
   <div class="top-in">
-    <button class="icon-btn back-btn" id="back" hidden aria-label="이전 화면으로" title="이전 화면으로 (Alt+←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="icon-btn back-btn" id="back" hidden aria-label="이전 화면으로" title="이전 화면으로 (Alt+←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>이전</span></button>
     <a class="logo" href="#home"><svg viewBox="0 0 100 100" width="30" height="30" aria-hidden="true" style="flex:none"><rect width="100" height="100" rx="22" fill="#185FA5"/><rect x="20" y="30" width="38" height="40" rx="5" fill="#E6F1FB"/><path d="M33 41 L46 50 L33 59 Z" fill="#185FA5"/><rect x="63" y="32" width="8" height="8" rx="1.5" fill="#E6F1FB" opacity=".8"/><rect x="63" y="46" width="8" height="8" rx="1.5" fill="#E6F1FB" opacity=".55"/><rect x="74" y="39" width="6" height="6" rx="1.5" fill="#E6F1FB" opacity=".4"/><rect x="63" y="60" width="6" height="6" rx="1.5" fill="#E6F1FB" opacity=".3"/></svg><span id="site-name">Mirago</span></a>
     <nav class="main" aria-label="주 메뉴">
       <a href="#home" data-nav="home">홈</a>
