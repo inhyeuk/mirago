@@ -195,9 +195,12 @@ window.miragoAppLogin = async idToken => {
   catch (e) { msg('로그인하지 못했습니다. 다시 시도해 주세요.', 'err'); }
 };
 // 앱이 '이 앱에서 YouTube(구글)에 로그인돼 있음'을 알려 주면, 게시판도 그 계정으로 한 번 자동 로그인을 시도한다(세션당 1번)
+// 로그인 상태는 메인 화면(index.html)과 같은 Firebase 보관소를 써서 함께 간다(2026-11-21) — 자동 시도도 메인과 같은 표시로 세션당 1번
+let ytOn = false;
 window.miragoYtState = on => {
+  ytOn = !!on;
   if (!on || !inAppPopup()) return;
-  try { if (sessionStorage.getItem('fs_board_auto')) return; sessionStorage.setItem('fs_board_auto', '1'); } catch (e) { return; }
+  try { if (sessionStorage.getItem('fs_acct_auto')) return; sessionStorage.setItem('fs_acct_auto', '1'); } catch (e) { return; }
   ready.then(() => { if (!isGoogle) login(true); });
 };
 window.miragoAppLoginFailed = () => msg('로그인을 마치지 못했습니다. 다시 시도해 주세요.', 'err');
@@ -241,7 +244,11 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'F11') { ev.preventDefault(); appBridge(portalFs ? 'fs:off' : 'fs:on'); }
   else if (ev.key === 'Escape' && portalFs) appBridge('fs:off');
 });
-$('#gLogout').onclick = async () => { await signOut(auth); msg('로그아웃했습니다.'); };
+$('#gLogout').onclick = async () => {  // 메인 화면 로그아웃과 같게: Mirago(게시판 포함) 로그아웃 + 앱이면 같은 버튼으로 한 YouTube 로그인도
+  await signOut(auth);
+  if (appKind !== 'web' && ytOn) appBridge('ytlogout');
+  msg('로그아웃했습니다. 메인 화면도 함께 로그아웃됩니다.');
+};
 
 $('#nick').value = LS.get('mg_nick', '');
 $('#body').oninput = () => { $('#cnt').textContent = $('#body').value.length; };
