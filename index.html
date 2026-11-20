@@ -1182,7 +1182,9 @@ document.addEventListener('fullscreenchange', () => {
 const APP_KIND = (() => { try { return sessionStorage.getItem('fs_app_kind') || 'web'; } catch (e) { return 'web'; } })();
 const FB_CFG = { apiKey: 'AIzaSyAlOWhVYU_0BpJqpnGGEa6RVc1KeQ5vJ0U', authDomain: 'mirago-app.firebaseapp.com', projectId: 'mirago-app', appId: '1:259107244535:web:6cda463c1b02048086c6f2' };
 const FB_V = 'https://www.gstatic.com/firebasejs/10.14.1/';
-let fbAuth = null, acct = null, acctReady = false, ytOn = false, pendingFb = false;
+let fbAuth = null, acct = null, acctReady = false, ytOn = false;
+// 'YouTube 로그인 뒤 Mirago 로그인 이어서' 표시 — 로그인하러 다녀오면 화면을 새로 여니 세션 저장소에(2026-11-21 앱 실측)
+const pend = { get() { try { return !!sessionStorage.getItem('fs_acct_pending'); } catch (e) { return false; } }, set(on) { try { on ? sessionStorage.setItem('fs_acct_pending', '1') : sessionStorage.removeItem('fs_acct_pending'); } catch (e) {} } };
 const fbP = (async () => {
   const [{ initializeApp }, m] = await Promise.all([import(FB_V + 'firebase-app.js'), import(FB_V + 'firebase-auth.js')]);
   fbAuth = m.getAuth(initializeApp(FB_CFG));
@@ -1238,7 +1240,7 @@ function initYtLogin() {
     ev.preventDefault();
     if (acct) { acctMenu(b, inApp); return; }
     if (!acctReady) { toast('로그인 상태를 확인하는 중입니다. 잠시 뒤 다시 눌러 주세요'); return; }
-    if (inAppPopup() && !ytOn && appBridge('ytlogin')) { pendingFb = true; return; }  // YouTube(구글) 로그인 → 돌아오면 Mirago 로그인 자동
+    if (inAppPopup() && !ytOn) { pend.set(true); if (appBridge('ytlogin')) return; pend.set(false); }  // YouTube(구글) 로그인 → 돌아오면 Mirago 로그인 자동
     fbLogin(false);
   };
 }
@@ -1276,11 +1278,12 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 // 앱(1.0.10+)이 페이지마다 'YouTube 로그인돼 있음'을 알려 준다. PC 앱은 그 구글 계정으로 Mirago 로그인을 조용히 마침(세션당 1번, 방금 누른 로그인이면 바로)
 window.miragoYtState = on => {
   ytOn = !!on;
+  if (!on) pend.set(false);  // YouTube 로그인 없이 '돌아가기'로 돌아옴
   if (!on || !inAppPopup()) return;
   let first = false;
   try { first = !sessionStorage.getItem('fs_acct_auto'); sessionStorage.setItem('fs_acct_auto', '1'); } catch (e) {}
-  if (!pendingFb && !first) return;
-  const go = pendingFb; pendingFb = false;
+  const go = pend.get(); pend.set(false);
+  if (!go && !first) return;
   fbP.then(() => new Promise(r => { const t = setInterval(() => { if (acctReady) { clearInterval(t); r(); } }, 50); }))
     .then(() => { if (!acct) fbLogin(!go); });
 };
