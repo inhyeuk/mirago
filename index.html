@@ -163,6 +163,12 @@ main{max-width:1400px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direct
 .thumb{container-type:inline-size}
 @container (max-width:220px){.b-dur,.b-cnt{font-size:11px;padding:1px 5px;gap:2px;left:auto}.b-dur{left:4px;bottom:4px}.b-cnt{right:4px;bottom:4px}.has-pbar .b-dur,.has-pbar .b-cnt{bottom:8px}.b-dur svg,.b-cnt svg,.b-dur .ic,.b-cnt .ic{display:none}}
 .b-cnt .of{font-weight:400;opacity:.7}
+.parts{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 10px;margin:4px 0 4px}
+.part{flex:none;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 13px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.part .pn{font-weight:500;font-size:12px;opacity:.65;font-variant-numeric:tabular-nums}
+.part.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.part.k-x:not(.on),.part.k-c:not(.on){font-weight:500;color:var(--muted)}
+.side-parts{display:flex;flex-wrap:wrap;gap:6px;padding:10px 4px 2px;border-top:1px solid var(--line);margin-top:8px}
 .ep-total{display:inline-flex;align-items:center;gap:5px;font-weight:600;color:#fff}
 .ep-total svg{width:15px;height:15px;opacity:.85}
 .pbar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.22)}
@@ -464,9 +470,15 @@ function prepare(cat) {
   CAT = cat;
   const hid = new Set(U.hidden);
   W = cat.works.map((w, idx) => {
-    const eps = w.e.map((e, i) => ({ id:e[0], ep:e[1], t:e[2], p:e[3] * 1000, du:e[4], vw:e[5], i }));
+    // 형식 v3: 같은 이름 아래 섞인 시즌·시리즈·외전·몰아보기는 w.pt=[[이름, 종류]], 회차 7번째 값=묶음 번호(없으면 한 묶음)
+    const parts = (w.pt && w.pt.length > 1 ? w.pt : [['', 'm']]).map(([n, k], j) => ({ n, k, j, eps:[], short:(n.split(' · ')[0]) }));
+    const eps = w.e.map((e, i) => ({ id:e[0], ep:e[1], t:e[2], p:e[3] * 1000, du:e[4], vw:e[5], i, pt:parts[e[6]] ? e[6] : 0 }));
+    for (const e of eps) { const P = parts[e.pt]; e.k = P.eps.length; P.eps.push(e); }
+    const main = eps.filter(e => parts[e.pt].k === 'm');
     return { idx, key:w.k, name:w.n, ch:w.c, chT:cat.channels[w.c]?.t || '', genres:w.g, narr:w.nr, upd:w.u * 1000,
-      total:w.tot, eps, simIdx:w.sim || [], cho:cho(w.n).replace(/\s/g, '') };
+      total:w.tot, eps, parts, multi:parts.length > 1, nSeries:parts.filter(P => P.k === 'm' || P.k === 's').length,
+      tail:(main.length ? main : eps)[(main.length ? main : eps).length - 1],
+      simIdx:w.sim || [], cho:cho(w.n).replace(/\s/g, '') };
   });
   WK = {}; VID = {};
   for (const w of W) { WK[w.key] = w; for (const e of w.eps) VID[e.id] = { w, e }; }
@@ -483,23 +495,31 @@ function mine(w) {
   const fresh = since ? w.eps.filter(e => e.p > since).length : 0;
   // 시청 완료 = 전부 봤거나, 시리즈 마지막 편을 끝까지 봄. 새 편이 붙으면 마지막 편이 바뀌어 저절로 '보는 중'으로 돌아간다.
   const fin = e => { const p = e && U.prog[e.id]; return !!(p && p.d && p.t >= p.d - 20); };
-  const done = w.eps.length > 0 && (watched >= w.eps.length || fin(w.eps[w.eps.length - 1]));
+  const done = w.eps.length > 0 && (watched >= w.eps.length || fin(w.tail));
   return { last, watched, done, fresh };
 }
+// 다음·이전 회차는 같은 묶음(시즌·시리즈) 안에서만 — 다른 시리즈 1화나 몰아보기로 넘어가지 않게
+const nextOf = (w, e) => w.parts[e.pt].eps[e.k + 1] || null;
+const prevOf = (w, e) => w.parts[e.pt].eps[e.k - 1] || null;
 function resumeEp(w) {
   const m = mine(w); if (!m.last) return w.eps[0];
   const e = m.last.e; const fin = m.last.d && m.last.t >= m.last.d - 20;
-  return fin && w.eps[e.i + 1] ? w.eps[e.i + 1] : e;
+  return fin && nextOf(w, e) ? nextOf(w, e) : e;
 }
 // 이어보기 작품에서 지금 회차 뒤에 아직 안 본 회차가 있는가(마지막 편이면 없음)
 function hasNext(w) {
   const m = mine(w); if (!m.last) return false;
-  return w.eps.slice(m.last.e.i + 1).some(e => { const p = U.prog[e.id]; return !(p && p.d && p.t >= p.d - 20); });
+  return w.parts[m.last.e.pt].eps.slice(m.last.e.k + 1).some(e => { const p = U.prog[e.id]; return !(p && p.d && p.t >= p.d - 20); });
 }
-const epLabel = e => e.ep != null ? `${e.ep}화` : `#${e.i + 1}`;
+function epLabel(e) {
+  const w = VID[e.id]?.w, P = w && w.parts[e.pt];
+  if (P && (P.k === 'c' || P.k === 'x')) return `${P.n} ${e.k + 1}`;
+  const n = e.ep != null ? `${e.ep}화` : `#${(P ? e.k : e.i) + 1}`;
+  return w && w.nSeries > 1 ? `${P.short} ${n}` : n;
+}
 const thumbUrl = (id, big) => `https://i.ytimg.com/vi/${id}/${big ? 'hqdefault' : 'mqdefault'}.jpg`;
 function thumbHTML(w, e, big) {
-  e = e || w.eps[w.eps.length - 1];
+  e = e || w.tail;
   const ph = `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(w.name)}</span></span>`;
   return CAT.demo ? ph : ph + `<img loading="lazy" decoding="async" src="${thumbUrl(e.id, big)}" alt="" onerror="this.remove()">`;
 }
@@ -559,7 +579,7 @@ function card(w, opt = {}) {
   return `<div class="card${nx ? ' has-next' : ''}"><a href="${href}" aria-label="${esc(w.name)}">
     <div class="thumb${(opt.resume || m.last) ? ' has-pbar' : ''}">${thumbHTML(w)}${badge}${durBadge(w, opt.resume ? target : null)}${nx ? `<span class="b-next" title="다음 회차가 있습니다">NEXT${ICON.next}</span>` : ''}<span class="b-cnt" title="이 작품의 영상 ${w.eps.length}편"><i class="ic ic-eps"></i>${opt.resume && w.eps.length > 1 ? `${esc(epLabel(target))}<span class="of">/ ${w.eps.length}편</span>` : epTotal(w)}</span>${(opt.resume || m.last) ? `<span class="pbar"><i style="width:${Math.max(ppct, 3)}%"></i></span>` : ''}</div></a>
     <a href="#work/${enc(w.key)}" class="t">${esc(w.name)}</a>
-    <div class="m">${opt.sub ? esc(opt.sub) : `${epTotal(w)} · ${esc(w.genres[0])} · ${esc(w.narr)} · ${ago(w.upd)}`}</div>
+    <div class="m">${opt.sub ? esc(opt.sub) : `${epTotal(w)}${w.nSeries > 1 ? ` · ${w.nSeries}개 시리즈` : ''} · ${esc(w.genres[0])} · ${esc(w.narr)} · ${ago(w.upd)}`}</div>
     ${opt.remove ? `<button class="x" data-dismiss="${esc(w.key)}" aria-label="이어보기에서 빼기">${ICON.x}</button>` : ''}
   </div>`;
 }
@@ -616,7 +636,7 @@ function heroHTML(list) {
   return `<section class="hero${list.length > 1 ? ' has-nav' : ''}" id="hero">${list.map((w, i) => {
     const m = mine(w); const n = newEps(w).length; const tgt = resumeEp(w);
     return `<div class="hero-slide${i ? '' : ' on'}" data-i="${i}"${i ? ' aria-hidden="true"' : ''}>
-      <div class="hero-bg">${thumbHTML(w, w.eps[w.eps.length - 1], true)}</div>
+      <div class="hero-bg">${thumbHTML(w, w.tail, true)}</div>
       <div class="hero-in">
         <div class="row">${n ? `<span class="b-new" style="position:static">오늘 ${n}화 업데이트</span>` : ''}${w.genres.map(g => `<span class="tag">${esc(g)}</span>`).join('')}</div>
         <h1>${esc(w.name)}</h1>
@@ -913,27 +933,29 @@ function viewSearch(q0) {
 }
 
 /* ================= 작품 상세 ================= */
-const D = { order:'asc', range:0, tab:'eps' };
+const D = { order:'asc', range:0, tab:'eps', part:0 };
 let lastDetail = '';
 function viewWork(key) {
   const w = WK[key];
   if (!w) { $('#app').innerHTML = '<div class="empty">작품을 찾지 못했습니다. 삭제되었거나 이름이 바뀌었을 수 있습니다.<a class="btn" href="#home">홈으로</a></div>'; return; }
-  if (lastDetail !== key) { D.order = 'asc'; D.range = 0; D.tab = 'eps'; lastDetail = key; }
   const m = mine(w); const tgt = resumeEp(w); const n = newEps(w).length;
-  const R = 50, ranges = Math.ceil(w.eps.length / R);
-  let eps = D.order === 'asc' ? w.eps : [...w.eps].reverse();
+  if (lastDetail !== key) { D.order = 'asc'; D.range = 0; D.tab = 'eps'; D.part = tgt ? tgt.pt : 0; lastDetail = key; }  // 이어보던 시즌 탭으로 열기
+  const P = w.parts[D.part] || w.parts[0];
+  const all = P.eps;
+  const R = 50, ranges = Math.ceil(all.length / R);
+  let eps = D.order === 'asc' ? all : [...all].reverse();
   if (ranges > 1) eps = eps.slice(D.range * R, D.range * R + R);
   railN = 0;
   $('#app').innerHTML = `
-  <section class="detail"><div class="hero-bg">${thumbHTML(w, w.eps[w.eps.length - 1], true)}</div>
+  <section class="detail"><div class="hero-bg">${thumbHTML(w, w.tail, true)}</div>
     <div class="detail-in">
       <div class="row">${n ? `<span class="b-new" style="position:static">오늘 ${n}화 업데이트</span>` : ''}${w.genres.map(g => `<a class="tag" href="#genre/${enc(g)}">${esc(g)}</a>`).join('')}</div>
       <h1>${esc(w.name)}</h1>
-      <div class="kv"><span class="ep-total">${ICON.eps}${w.eps.length > 1 ? `총 ${w.eps.length}편` : '단편'}</span>${tgt && tgt.du ? `<span>${m.last ? `${esc(epLabel(tgt))} ` : w.eps.length > 1 ? '1편 ' : ''}${fmtDur(tgt.du)}</span>` : ''}<span>${esc(w.narr)}</span><a class="ch-link" href="#channel/${enc(w.ch)}">${esc(w.chT)}</a><span>${ago(w.upd)} 업데이트</span></div>
+      <div class="kv"><span class="ep-total">${ICON.eps}${w.eps.length > 1 ? `총 ${w.eps.length}편` : '단편'}${w.nSeries > 1 ? ` · ${w.nSeries}개 시리즈` : ''}</span>${tgt && tgt.du ? `<span>${m.last ? `${esc(epLabel(tgt))} ` : w.eps.length > 1 ? '1편 ' : ''}${fmtDur(tgt.du)}</span>` : ''}<span>${esc(w.narr)}</span><a class="ch-link" href="#channel/${enc(w.ch)}">${esc(w.chT)}</a><span>${ago(w.upd)} 업데이트</span></div>
       ${m.last ? `<div class="small muted">${m.watched}/${w.eps.length}화 시청 · 마지막 시청 ${ago(m.last.at)}</div>` : ''}
       <div class="row">
         <a class="btn pri" href="#play/${enc(tgt.id)}">${ICON.play}${m.last ? `이어보기 ${esc(epLabel(tgt))}` : '1화부터 재생'}</a>
-        ${m.last ? `<a class="btn ghost" href="#play/${enc(w.eps[0].id)}">처음부터</a>` : `<a class="btn ghost" href="#play/${enc(w.eps[w.eps.length - 1].id)}">최신화 보기</a>`}
+        ${m.last ? `<a class="btn ghost" href="#play/${enc(w.eps[0].id)}">처음부터</a>` : `<a class="btn ghost" href="#play/${enc(w.tail.id)}">최신화 보기</a>`}
         <button class="btn ghost" data-fav="${esc(w.key)}">${U.fav[w.key] ? ICON.check + '찜함' : ICON.plus + '찜하기'}</button>
         <button class="btn ghost" id="share">${ICON.share}공유</button>
         <button class="btn ghost" id="report">${ICON.flag}신고·숨기기</button>
@@ -941,8 +963,9 @@ function viewWork(key) {
     </div></section>
   <div class="tabbar" role="tablist"><button class="${D.tab === 'eps' ? 'on' : ''}" data-tab="eps">회차 ${w.eps.length}</button><button class="${D.tab === 'sim' ? 'on' : ''}" data-tab="sim">비슷한 작품</button></div>
   ${D.tab === 'eps' ? `
+    ${w.multi ? `<div class="parts" role="tablist" aria-label="시즌·시리즈">${w.parts.map(x => `<button class="part ${x.j === P.j ? 'on' : ''} k-${x.k}" role="tab" aria-selected="${x.j === P.j}" data-part="${x.j}">${esc(x.n)}<span class="pn">${x.eps.length}</span></button>`).join('')}</div>` : ''}
     <div class="row" style="justify-content:space-between">
-      <div class="chips">${ranges > 1 ? Array.from({ length:ranges }, (_, i) => { const a = D.order === 'asc' ? i * R + 1 : w.eps.length - i * R, b = D.order === 'asc' ? Math.min(w.eps.length, (i + 1) * R) : Math.max(1, w.eps.length - (i + 1) * R + 1); return `<button class="chip ${D.range === i ? 'on' : ''}" data-range="${i}">${a}~${b}</button>`; }).join('') : ''}</div>
+      <div class="chips">${ranges > 1 ? Array.from({ length:ranges }, (_, i) => { const a = D.order === 'asc' ? i * R + 1 : all.length - i * R, b = D.order === 'asc' ? Math.min(all.length, (i + 1) * R) : Math.max(1, all.length - (i + 1) * R + 1); return `<button class="chip ${D.range === i ? 'on' : ''}" data-range="${i}">${a}~${b}</button>`; }).join('') : ''}</div>
       <div class="chips"><button class="chip ${D.order === 'asc' ? 'on' : ''}" data-order="asc">첫화부터</button><button class="chip ${D.order === 'desc' ? 'on' : ''}" data-order="desc">최신화부터</button></div>
     </div>
     <div class="eps">${eps.map(e => epRow(w, e)).join('')}</div>
@@ -951,6 +974,7 @@ function viewWork(key) {
   bindFav();
   $$('[data-tab]').forEach(b => b.onclick = () => { D.tab = b.dataset.tab; route(); });
   $$('[data-range]').forEach(b => b.onclick = () => { D.range = +b.dataset.range; route(); });
+  $$('[data-part]').forEach(b => b.onclick = () => { D.part = +b.dataset.part; D.range = 0; route(); });
   $$('[data-order]').forEach(b => b.onclick = () => { D.order = b.dataset.order; D.range = 0; route(); });
   $('#share').onclick = async () => { try { await navigator.clipboard.writeText(location.href); toast('링크를 복사했습니다.'); } catch (e) { toast(location.href); } };
   $('#report').onclick = () => {
@@ -971,7 +995,7 @@ function epRow(w, e, cur) {
   const p = U.prog[e.id]; const pct = p && p.d ? Math.min(100, Math.round(p.t / p.d * 100)) : 0; const done = p && p.d && p.t >= p.d - 20;
   const isNew = e.p >= Date.now() - 24 * HOUR;
   return `<a class="ep ${cur === e.id ? 'cur' : ''}" href="#play/${enc(e.id)}">
-    <span class="no">${e.ep ?? e.i + 1}</span>
+    <span class="no">${e.ep ?? e.k + 1}</span>
     <span class="thumb">${CAT.demo ? `<span class="ph" style="--h:${hash(w.key) % 360}"><span>${esc(epLabel(e))}</span></span>` : `<span class="ph" style="--h:${hash(w.key) % 360}"></span><img loading="lazy" decoding="async" src="${thumbUrl(e.id)}" alt="" onerror="this.remove()">`}${pct ? `<span class="pbar"><i style="width:${pct}%"></i></span>` : ''}</span>
     <span><span class="tt">${isNew ? '<span class="ep-b">NEW</span>' : ''}${esc(e.t)}</span><br><span class="muted small">${fmtDur(e.du)} · ${ago(e.p)} · YouTube 조회수 ${fmtNum(e.vw)}${done ? ' · <span class="done">다 봄</span>' : pct ? ` · ${pct}% 시청` : ''}</span></span>
     <span class="tail muted small">${fmtDur(e.du)}</span></a>`;
@@ -1002,7 +1026,7 @@ function stopPlayer() {
 function viewPlay(id) {
   const v = VID[id];
   if (!v) { $('#app').innerHTML = '<div class="empty">재생할 회차를 찾지 못했습니다.<a class="btn" href="#home">홈으로</a></div>'; return; }
-  const { w, e } = v; const prev = w.eps[e.i - 1], next = w.eps[e.i + 1];
+  const { w, e } = v; const prev = prevOf(w, e), next = nextOf(w, e), P = w.parts[e.pt];
   $('#app').innerHTML = `<div class="play">
     <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
       <div class="listen-note muted small">듣기 모드 · 화면이 꺼지지 않게 유지합니다. 정책상 플레이어는 화면에 보여야 합니다.</div>
@@ -1013,7 +1037,7 @@ function viewPlay(id) {
           ${next ? `<aside class="fs-next" aria-label="다음 편"><div class="fs-next-in">
             <button class="fs-x" id="fs-x" aria-label="다음 편 안내 닫기">${ICON.x}</button>
             <button class="fs-go" id="fs-go">
-              <span class="fs-poster">${thumbHTML(w, next, true)}<span class="fs-left">${w.eps.length - 1 - e.i > 1 ? `남은 ${w.eps.length - 1 - e.i}편` : '마지막 편'}</span><span class="fs-play">${ICON.play}</span></span>
+              <span class="fs-poster">${thumbHTML(w, next, true)}<span class="fs-left">${P.eps.length - 1 - e.k > 1 ? `남은 ${P.eps.length - 1 - e.k}편` : '마지막 편'}</span><span class="fs-play">${ICON.play}</span></span>
               <span class="lab">다음 편 이어 보기</span>
               <strong>${esc(epLabel(next))} · ${esc(next.t)}</strong>
               <span class="small muted">${next.du ? fmtDur(next.du) + ' · ' : ''}${esc(w.name)}</span>
@@ -1028,7 +1052,7 @@ function viewPlay(id) {
       <div class="pctl">
         <button class="btn" id="fs-btn" title="전체 화면 — 끝나기 20초 전 오른쪽에 다음 편이 나옵니다">${ICON.full}전체 화면</button>
         ${prev ? `<a class="btn" href="#play/${enc(prev.id)}">${ICON.left}이전</a>` : ''}
-        ${next ? `<a class="btn acc" href="#play/${enc(next.id)}">다음 회차${ICON.right}</a>` : '<span class="small muted">마지막 회차입니다</span>'}
+        ${next ? `<a class="btn acc" href="#play/${enc(next.id)}">다음 회차${ICON.right}</a>` : `<span class="small muted">${w.multi ? esc(P.n) + ' ' : ''}마지막 회차입니다</span>`}
         <select id="speed" aria-label="재생 속도">${[0.75, 1, 1.25, 1.5, 1.75, 2].map(s => `<option value="${s}" ${U.prefs.speed == s ? 'selected' : ''}>${s}배속</option>`).join('')}</select>
         <select id="sleep" aria-label="수면 타이머"><option value="">수면 타이머</option><option value="15">15분 후 정지</option><option value="30">30분 후 정지</option><option value="60">1시간 후 정지</option><option value="end">이번 회차 끝나면 정지</option></select>
         <span class="small muted" id="sleep-left"></span>
@@ -1038,8 +1062,8 @@ function viewPlay(id) {
         <a class="btn ghost sm" href="https://www.youtube.com/watch?v=${enc(id)}" target="_blank" rel="noopener">YouTube에서 보기</a>
       </div>
     </div>
-    <aside class="side nl"><div class="side-h"><strong>${esc(w.name)}</strong><span class="small muted">${e.i + 1} / ${w.eps.length}</span></div>
-      <div class="eps">${w.eps.map(x => epRow(w, x, id)).join('')}</div></aside>
+    <aside class="side nl"><div class="side-h"><strong>${esc(w.name)}${w.multi ? ` <span class="small muted">· ${esc(P.n)}</span>` : ''}</strong><span class="small muted">${e.k + 1} / ${P.eps.length}</span></div>
+      <div class="eps">${P.eps.map(x => epRow(w, x, id)).join('')}</div>${w.multi ? `<div class="side-parts">${w.parts.filter(x => x.j !== P.j).map(x => `<a class="chip" href="#play/${enc(x.eps[0].id)}">${esc(x.n)} (${x.eps.length})</a>`).join('')}</div>` : ''}</aside>
   </div>`;
   bindFav();
   const cur = $('.side .ep.cur'); if (cur) cur.scrollIntoView({ block:'center' });
