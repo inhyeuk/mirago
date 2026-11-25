@@ -376,6 +376,8 @@ footer{max-width:1400px;margin:0 auto;padding:20px 24px 40px;color:var(--muted);
 .bd-st.add{border-color:#2f6b4f;color:#9be3bf}.bd-st.have{border-color:#3b5b8f;color:#a9c6ff}.bd-st.no{border-color:#7a3b3b;color:#ffb3b3}.bd-st.wait,.bd-st.check,.bd-st.err{border-color:#5a4a1f;color:#ffb547}
 .bd-dlg{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;max-width:420px;width:calc(100% - 32px)}
 .bd-dlg::backdrop{background:rgba(0,0,0,.6)}
+.adm-del{border-color:#7a3b3b!important;color:#ffb3b3!important}.adm-note{color:#ffb547;margin-top:8px}
+.bd-blrow{display:flex;gap:8px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:7px 0}.bd-blrow .d{color:var(--muted)}
 .bd-dlg textarea{width:100%;box-sizing:border-box;font:inherit;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -526,7 +528,9 @@ function prepare(cat) {
   $('#site-name').textContent = cat.site || 'Mirago';
   document.title = cat.site || 'Mirago';
 }
-const visible = () => W.filter(w => !U.hidden.includes(w.key));
+// 운영자가 [List에서 삭제]한 작품(2026-11-25): 모든 이용자 목록에서는 다음 자동 갱신 때 빠지고, 운영자 화면에서는 바로 숨긴다(게시판 스크립트가 채움)
+const BLOCK = new Set();
+const visible = () => W.filter(w => !U.hidden.includes(w.key) && !BLOCK.has(w.key));
 const newEps = w => w.eps.filter(e => e.p >= Date.now() - 24 * HOUR);
 function mine(w) {
   let last = null, watched = 0;
@@ -999,7 +1003,9 @@ function viewWork(key) {
         <button class="btn ghost" data-fav="${esc(w.key)}">${U.fav[w.key] ? ICON.check + '찜함' : ICON.plus + '찜하기'}</button>
         <button class="btn ghost" id="share">${ICON.share}공유</button>
         <button class="btn ghost" id="report">${ICON.flag}신고·숨기기</button>
+        <button class="btn ghost adm-del" id="adminDel" hidden>${BLOCK.has(w.key) ? '삭제 취소(복구)' : ICON.x + 'List에서 삭제'}</button>
       </div>
+      ${BLOCK.has(w.key) ? '<div class="small adm-note">운영자가 List에서 삭제한 작품입니다. 다음 자동 갱신(2시간 안)부터 모든 이용자 목록에서 빠집니다.</div>' : ''}
     </div></section>
   <div class="tabbar" role="tablist"><button class="${D.tab === 'eps' ? 'on' : ''}" data-tab="eps">회차 ${w.eps.length}</button><button class="${D.tab === 'sim' ? 'on' : ''}" data-tab="sim">비슷한 작품</button></div>
   ${D.tab === 'eps' ? `
@@ -1010,7 +1016,7 @@ function viewWork(key) {
     </div>
     <div class="eps">${eps.map(e => epRow(w, e)).join('')}</div>
     <p class="muted small">조회수는 YouTube에서 받은 값입니다. 진행 막대와 시청 표시는 이 기기의 내 기록입니다.</p>`
-  : `<div class="grid">${w.sim.filter(x => !U.hidden.includes(x.key)).map(x => card(x)).join('')}</div>`}`;
+  : `<div class="grid">${w.sim.filter(x => !U.hidden.includes(x.key) && !BLOCK.has(x.key)).map(x => card(x)).join('')}</div>`}`;
   bindFav();
   $$('[data-tab]').forEach(b => b.onclick = () => { D.tab = b.dataset.tab; route(); });
   $$('[data-range]').forEach(b => b.onclick = () => { D.range = +b.dataset.range; route(); });
@@ -1023,6 +1029,26 @@ function viewWork(key) {
     if (CAT.reportUrl) window.open(reportLink(w), '_blank', 'noopener');
     location.hash = '#home';
   };
+  // 운영자(사장님 구글 계정)에게만: 잘못 편성된 작품을 전체 목록에서 뺀다(같은 작품 새 회차도 다시 안 들어옴)
+  if (window.miragoAdmin) miragoAdmin.is().then(ok => {
+    const b = $('#adminDel'); if (!ok || !b || lastDetail !== key) return;
+    b.hidden = false;
+    b.onclick = async () => {
+      const blocked = BLOCK.has(w.key);
+      if (!confirm(blocked ? `「${w.name}」을(를) 다시 목록에 넣을까요?
+다음 자동 갱신(2시간 안) 때 다시 편성됩니다.`
+        : `「${w.name}」(${w.eps.length}편)을(를) 전체 List에서 삭제할까요?
+
+· 다음 자동 갱신(2시간 안)부터 모든 이용자 목록에서 빠집니다.
+· 같은 작품의 새 회차도 다시 편성되지 않습니다.
+· 의견 게시판 > 운영자 도구 > 삭제한 작품에서 복구할 수 있습니다.`)) return;
+      b.disabled = true;
+      try {
+        if (blocked) { await miragoAdmin.unblock(w.key); toast('복구했습니다. 다음 자동 갱신 때 다시 편성됩니다.'); route(); }
+        else { await miragoAdmin.block(w); toast(`「${w.name}」을(를) List에서 삭제했습니다.`); location.hash = '#home'; }
+      } catch (e) { b.disabled = false; toast('처리하지 못했습니다: ' + (e.code || e.message)); }
+    };
+  });
 }
 /* 신고 주소: 구글 폼 '미리 채워진 링크'의 {work}·{channel}·{url} 자리에 값을 넣습니다. 자리표시가 없으면 주소만 엽니다. */
 function reportLink(w) {
@@ -1697,6 +1723,10 @@ const HTML = () => `<div id="bd">
       <input id="bdInHistQ" type="search" placeholder="주소·제목·작품명으로 찾기" style="width:100%;margin-top:6px">
       <div id="bdInHistList"></div>
     </div>
+    <div class="row" style="justify-content:space-between;margin-top:18px"><h2 style="margin:0">삭제한 작품 <span class="muted small" id="bdBlN"></span></h2><button class="bd-link" id="bdBlReload">새로고침</button></div>
+    <p class="muted small" style="margin:4px 0 0">작품 상세 화면의 <b>[List에서 삭제]</b>로 뺀 작품입니다. 다음 자동 갱신(2시간 안)부터 모든 이용자 목록에서 빠지고,
+      같은 작품의 새 회차도 다시 편성되지 않습니다. <b>복구</b>하면 다음 갱신 때 다시 들어갑니다.</p>
+    <div id="bdBlList" class="small"></div>
   </div>
   <div class="bd-card">
     <div class="row" style="justify-content:space-between"><b>최근 글</b><button class="bd-link" id="bdReload">새로고침</button></div>
@@ -1721,10 +1751,69 @@ async function paint(reload) {
   B('bdWrite').classList.toggle('bd-locked', !isGoogle);
   B('bdSend').textContent = isGoogle ? '등록' : '로그인하고 등록';
   B('bdAdmin').hidden = !isAdmin;
-  if (isAdmin) loadIntake();
+  if (isAdmin) { loadIntake(); loadBlocks(); }
   if (reload) load(true);
 }
-window.boardAuthChanged = () => paint(true);
+window.boardAuthChanged = () => { paint(true); syncBlocks(); };
+
+// ---------- 운영자 작품 삭제 목록 Firestore blocks/{w_해시} (2026-11-25) ----------
+const blockId = async key => 'w_' + (await sha256(key)).slice(0, 24);
+async function amAdmin() {
+  await authReady();
+  return !!acct && acct.emailVerified && await sha256(String(acct.email).toLowerCase()) === OWNER_SHA;
+}
+async function fetchBlocks() {
+  await loadFs();
+  const snap = await F.getDocs(F.collection(db, 'blocks'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+// 운영자로 로그인하면 삭제 목록을 받아 운영자 화면에서 바로 숨김(모든 이용자는 수집기가 다음 갱신 때 반영)
+async function syncBlocks() {
+  try {
+    if (!(await amAdmin())) { if (BLOCK.size) { BLOCK.clear(); route(); } return; }
+    const list = await fetchBlocks();
+    const before = [...BLOCK].join('|');
+    BLOCK.clear(); list.forEach(b => b.k && BLOCK.add(b.k));
+    if ([...BLOCK].join('|') !== before && W.length) route();
+  } catch (e) {}
+}
+window.miragoAdmin = {
+  is: amAdmin,
+  async block(w) {
+    if (!(await amAdmin())) throw new Error('운영자만 할 수 있습니다');
+    await loadFs();
+    await F.setDoc(F.doc(db, 'blocks', await blockId(w.key)), {
+      k: w.key, n: String(w.name).slice(0, 200), c: w.ch, v: w.eps.map(e => e.id).slice(0, 3000), at: F.serverTimestamp(), uid: acct.uid });
+    BLOCK.add(w.key);
+  },
+  async unblock(key) {
+    await loadFs();
+    await F.deleteDoc(F.doc(db, 'blocks', await blockId(key)));
+    BLOCK.delete(key);
+  }
+};
+async function loadBlocks() {
+  const box = B('bdBlList'); if (!box) return; box.textContent = '불러오는 중…';
+  try {
+    const list = (await fetchBlocks()).sort((a, b) => (b.at?.seconds || 0) - (a.at?.seconds || 0));
+    if (!on()) return;
+    BLOCK.clear(); list.forEach(b => b.k && BLOCK.add(b.k));
+    B('bdBlN').textContent = list.length ? `${list.length}작품` : '';
+    const live = new Set(((CAT && CAT.works) || []).map(w => w.k));
+    box.innerHTML = list.length ? list.map(b => `<div class="bd-blrow"><div><b>${esc(b.n)}</b>
+        <a href="https://www.youtube.com/channel/${esc(encodeURIComponent(b.c || ''))}" target="_blank" rel="noopener">${esc((CAT && CAT.channels[b.c]?.t) || b.c)}</a>
+        <div class="d">${(b.v || []).length}편 · 삭제 ${esc(fmt(b.at))} · ${live.has(b.k) ? '<span class="bd-hid">다음 갱신 때 목록에서 빠짐</span>' : '목록에서 빠짐'}</div></div>
+        <button class="bd-btn" data-bid="${esc(b.id)}" data-bk="${esc(b.k)}">복구</button></div>`).join('')
+      : '<div class="muted" style="padding:7px 0">삭제한 작품이 없습니다.</div>';
+  } catch (e) { box.textContent = '목록을 불러오지 못했습니다: ' + (e.code || e.message); }
+}
+async function onBlockClick(e) {
+  const b = e.target.closest('button[data-bid]'); if (!b) return;
+  if (!confirm('이 작품을 다시 목록에 넣을까요? 다음 자동 갱신(2시간 안) 때 다시 편성됩니다.')) return;
+  b.disabled = true;
+  try { await loadFs(); await F.deleteDoc(F.doc(db, 'blocks', b.dataset.bid)); BLOCK.delete(b.dataset.bk); loadBlocks(); }
+  catch (err) { b.disabled = false; alert('복구하지 못했습니다: ' + (err.code || err.message)); }
+}
 
 window.viewBoard = () => {
   $('#app').innerHTML = HTML();
@@ -1742,6 +1831,8 @@ window.viewBoard = () => {
   B('bdInAdd').onclick = addIntake;
   B('bdInReload').onclick = () => loadIntake();
   B('bdInList').onclick = onIntakeClick;
+  B('bdBlList').onclick = onBlockClick;
+  B('bdBlReload').onclick = () => loadBlocks();
   B('bdInHistBtn').onclick = () => { const h = B('bdInHist'); h.hidden = !h.hidden; B('bdInHistBtn').textContent = h.hidden ? '이력 보기' : '이력 닫기'; };
   B('bdInHistF').onclick = e => {
     const b = e.target.closest('button[data-f]'); if (!b) return;
